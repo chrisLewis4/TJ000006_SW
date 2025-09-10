@@ -788,7 +788,7 @@ static void Eeprom_fill(int8 set_char)
 	{
 		pc_complete = ((x * 100)/EEPROM_BYTE_COUNT);
 		while(!ASC_Asci_tx_empty());
-		sprintf((char *)tmpstr,"Resetting All of EEPROM to %02x - %02d%% done\r",(int16)buf[1],pc_complete+1);
+		sprintf((char *)tmpstr,"\rResetting All of EEPROM to %02x - %03d%% done",(int16)buf[1],pc_complete+1);
 		ASC_Asci_msg(tmpstr);
 				
 		// Write char to EEPROM
@@ -804,6 +804,7 @@ static void Eeprom_fill(int8 set_char)
 			ASC_Asci_msg(tmpstr);
 			break;
 		}
+	
 
 	}
 	while(!ASC_Asci_tx_empty());

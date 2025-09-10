@@ -120,11 +120,14 @@ Description	:
 static void I2C_WaitForComplete(void) 
 {
 	int8 volatile tmp;
+	int16 timeout;
 	
-	do 
+	for(timeout = 0; timeout < 0xffff; timeout++)
 	{
 		tmp = TWCR;
-	} while (!(tmp  & (1 <<TWINT))); 
+		if((tmp  & (1 <<TWINT)))
+			break;
+	} 
 	
 /*	loop_until_bit_is_set(TWCR, TWINT);*/
 }
