@@ -50,7 +50,7 @@
 
 
 extern void	I2C_Init(void);
-extern void I2C_Write(int8 addr, int8 byte_count,int8 *buf);
+extern int8 I2C_Write(int8 addr, int8 byte_count,int8 *buf);
 extern void I2C_Read(int8 addr, int8 byte_count,int8 *buf);
 extern void I2C_Shutdown(void);
 

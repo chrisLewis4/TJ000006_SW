@@ -43,6 +43,9 @@ static int8 Cmd_check(int8);
 //EEPROM specific functions
 static void Eeprom_addr_select_menu(void);
 static void Eeprom_debug_menu(void);
+static void Eeprom_write(int8 eeprom_addr,int16 byte_addr,int16 byte_count,int8 *buf);
+static int8 *Eeprom_read(int8 eeprom_addr,int16 byte_addr,int16 byte_count,int8 *buf);
+static void Eeprom_fill(int8 set_char);
 
 
 /*==================================================================*/
@@ -71,7 +74,7 @@ static void Eeprom_debug_menu(void);
 #define CHECKSUM_MSB_ADDR 0x7e
 #define CHECKSUM_LSB_ADDR 0x7f
 
-#define EEPROM_ERASE_CHAR 0xff
+#define EEPROM_SET_CHAR 0xff
 #define EEPROM_RESET_CHAR 0x00
 #define PRODUCT_PN_EEPROM_ADDR 0
 #define PRODUCT_PN_EEPROM_LEN 9
@@ -158,6 +161,7 @@ int8 const EEPROM_DEBUG_MSG[] PROGMEM =
 	"K - Checksum\n\r"
 	"W - Write\n\r"
 	"R - Reset EEPROM to 00\n\r"
+	"S - Set EEPROM to FF\n\r"
 	"X - Return to Debug Menu\n\r"
 };
 int8 const EEPROM_ADDR_SEL_MSG[] PROGMEM =
@@ -549,7 +553,7 @@ Description	:
 #define EEPROM_PAGE_SIZE 16
 
 
-static int8 cur_eeprom_addr;
+static int8 eeprom_i2C_addr;
 
 static void Eeprom_addr_select_menu(void)
 {
@@ -564,16 +568,16 @@ static void Eeprom_addr_select_menu(void)
 	switch(rx_byte)
 	{
 		case '1':
-			cur_eeprom_addr = 0x50;
+			eeprom_i2C_addr = 0x50;
 			break;
 		case '2':
-			cur_eeprom_addr = 0x52;
+			eeprom_i2C_addr = 0x52;
 			break;
 		case '3':
-			cur_eeprom_addr = 0x54;
+			eeprom_i2C_addr = 0x54;
 			break;
 		case '4':
-			cur_eeprom_addr = 0x56;
+			eeprom_i2C_addr = 0x56;
 			break;
 		case 'x':
 		case 'X':
@@ -597,8 +601,8 @@ Description	:
 static void Eeprom_debug_menu(void)
 {
 	
-	int8 rx_byte, buf[MAX_PROUCT_CODE_LEN+2],n,*ptr,erase_char;
-	int16 x,csum_calc,pc_complete;
+	int8 rx_byte, buf[MAX_PROUCT_CODE_LEN+2],n,*ptr,set_char;
+	int16 x,csum_calc;
 	
 	/* get rx char */
 	rx_byte = Cmd_check(CMD_ECHO);
@@ -621,18 +625,18 @@ static void Eeprom_debug_menu(void)
 		case 'H':
 		case 'h':
 			ASC_Asci_msg((int8 *)"\n\n\rHEX DUMP\n\r\n");
-			buf[0] = 0;	//set initial read byte addr to 0 
-			I2C_Write(cur_eeprom_addr,1,buf);	//send CMD for immediate read process to set EEPROM byte address to 0
-			for(x = 0x0;x < EEPROM_BYTE_COUNT;x += EEPROM_PAGE_SIZE)
+			buf[0] = 0x00;	//set initial read byte addr to 0 
+
+			for(x = 0;x < EEPROM_BYTE_COUNT;x += EEPROM_PAGE_SIZE)
 			{
 				sprintf((char *)tmpstr,"Addr = %04x: ",x);
 				ASC_Asci_msg(tmpstr);
 			
-				I2C_Read(cur_eeprom_addr,EEPROM_PAGE_SIZE,buf);
+				Eeprom_read(eeprom_i2C_addr,x,EEPROM_PAGE_SIZE,buf);
 
 				for(n = 0; n < EEPROM_PAGE_SIZE; n++)
 				{
-					sprintf((char *)&tmpstr[(n*3)],"%02x ",buf[n]);
+					sprintf((char *)&tmpstr[(n*3)],"%02x ",buf[n+1]);
 				}
 				while(!ASC_Asci_tx_empty());
 				ASC_Asci_msg(tmpstr);
@@ -663,13 +667,24 @@ static void Eeprom_debug_menu(void)
 		case 'w':
 			//			n = 0;
 			// Write to address in lower 128 bytes
-			buf[0] = 0;
+			buf[0] = 0x06;
 			buf[1] = WRITE_CHAR_LOW;
-		
-			//SPI_Nvr_write(buf,TFR_ADDR_LOW,TFR_COUNT);
-			I2C_Write(cur_eeprom_addr,2,buf);
-			sprintf((char *)tmpstr,"\n\rData %02x written %d times to address %04x\n\r",(int16)buf[0],1,(int16)0);
+
+			Eeprom_write(eeprom_i2C_addr,(int16)buf[0],2,buf);		
+			while(!ASC_Asci_tx_empty());
+			sprintf((char *)tmpstr,"\n\rData %02x written to address %04x\n\r",(int16)buf[1],(int16)buf[0]);
 			ASC_Asci_msg(tmpstr);
+
+	
+			Eeprom_read(eeprom_i2C_addr,(int16)buf[0],1,buf);	//read 1 byte of data from EEPROM
+
+			while(!ASC_Asci_tx_empty());
+			sprintf((char *)tmpstr,"\n\rData %02x read from address %04x\n\r",(int16)buf[1],(int16)buf[0]);
+			ASC_Asci_msg(tmpstr);
+	//		ASC_Asci_msg("\n\r A\n\r");
+			
+	//		ASC_Asci_msg("\n\r B\n\r");
+			
 		
 /*			// Write to upper in lower 128 bytes
 			for(x = 0 ;x < TFR_COUNT; x++)
@@ -680,46 +695,119 @@ static void Eeprom_debug_menu(void)
 			while(!ASC_Asci_tx_empty());
 			ASC_Asci_msg(tmpstr);*/
 			break;
-/*
+
+		case 's':
+		case 'S':
+			Eeprom_fill(EEPROM_SET_CHAR);
+			break;
 		case 'R':
 		case 'r':
-			erase_char = EEPROM_RESET_CHAR;
-			for(x = 0; x < 0x100; x++)
-			{
-				pc_complete = ((x * 100)/0x100);
-				while(!ASC_Asci_tx_empty());
-				sprintf((char *)tmpstr,"Resetting All of EEPROM to 00 - %d%% done\r",pc_complete+1);
-				ASC_Asci_msg(tmpstr);
-				SPI_Nvr_write(&erase_char,x,1);
-
-				ptr = SPI_Nvr_read(buf,(int8)x,1);
-				if(ptr[0] != EEPROM_RESET_CHAR)
-				{
-					while(!ASC_Asci_tx_empty());
-					sprintf((char *)tmpstr,"\n\rErase ERR %xd\n\r",(int16)ptr[0]);
-					ASC_Asci_msg(tmpstr);
-					--x;
-				}
-
-			}
-			while(!ASC_Asci_tx_empty());
-			MEN_Set_cmd_bk_func(SPI_NVR_MENU_MSG,Spi_nvr_debug_menu);
+			Eeprom_fill(EEPROM_RESET_CHAR);
 			break;
+			
 		case 'X':
 		case 'x':
 			MEN_Set_cmd_bk_func(DEBUG_MENU_MSG,Debug_menu);
+			return;
 			break;
-			default:
+		default:
 			ASC_Asci_msg(CMD_NOT_IMPLEMENTED_MSG);
-			MEN_Set_cmd_bk_func(SPI_NVR_MENU_MSG,Spi_nvr_debug_menu);
 			break;
-		*/
+		
 	}
 	MEN_Set_cmd_bk_func(EEPROM_DEBUG_MSG,Eeprom_debug_menu);
 
 
 }
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+static int8 *Eeprom_read(int8 eeprom_addr, int16 byte_addr,int16 byte_count,int8 *buf)
+{
+	int8 cur_addr;
+	
+	// set D8 in address according to memory location to access
+	if(byte_addr >= 0x100)
+	{
+		cur_addr = eeprom_addr+1;
+	}
+	else
+	{
+		cur_addr = eeprom_addr;
+	}
+	buf[0] = (int8)(byte_addr & 0xff);
 
+	// Fist set read address by performing a dummy write
+	while(I2C_Write(cur_addr,1,buf) != 0x28); // keep trying until the EEPROM  is not busy writing
+	I2C_Read(cur_addr,byte_count,&buf[1]);	//read x bytes of data from EEPROM
+	return &buf[1];
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+static void Eeprom_write(int8 eeprom_addr,int16 byte_addr, int16 byte_count,int8 *buf)
+{
+	int8 cur_addr, addr;
+	
+	// set D8 in address according to memory location to access	
+	if(byte_addr >= 0x100)
+	{
+		cur_addr = eeprom_addr+1;
+	}
+	else
+	{
+		cur_addr = eeprom_addr;
+	}
+	buf[0] = (int8)(byte_addr & 0xff);
+
+	// Fist set write address by performing a dummy write
+	while(I2C_Write(cur_addr,1,buf) != 0x28); // keep trying until the EEPROM  is not busy writing
+	I2C_Write(cur_addr,byte_count,buf);	//read 1 byte of data from EEPROM
+}
+
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+static void Eeprom_fill(int8 set_char)
+{
+	int8 buf[3];
+	int16 x,pc_complete;
+	
+	buf[1] = set_char;
+			
+	for(x = 0; x < EEPROM_BYTE_COUNT; x++)
+	{
+		pc_complete = ((x * 100)/EEPROM_BYTE_COUNT);
+		while(!ASC_Asci_tx_empty());
+		sprintf((char *)tmpstr,"Resetting All of EEPROM to %02x - %02d%% done\r",(int16)buf[1],pc_complete+1);
+		ASC_Asci_msg(tmpstr);
+				
+		// Write char to EEPROM
+		Eeprom_write(eeprom_i2C_addr,x,2,buf);
+				
+		// Now check data ihas been set
+		Eeprom_read(eeprom_i2C_addr,x,1,buf);	//read 1 byte of data from EEPROM
+
+		if(buf[1] != set_char)
+		{
+			while(!ASC_Asci_tx_empty());
+			sprintf((char *)tmpstr,"\n\rErase ERR %x\n\r",(int16)buf[1]);
+			ASC_Asci_msg(tmpstr);
+			break;
+		}
+
+	}
+	while(!ASC_Asci_tx_empty());
+}
 /*********************************************************************
 *                       End of menu.c                                *
 *********************************************************************/
