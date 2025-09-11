@@ -551,7 +551,8 @@ Description	:
 --------------------------------------------------------------------*/
 #define EEPROM_BYTE_COUNT 512
 #define EEPROM_PAGE_SIZE 16
-
+#define BYTE_WRITE_ADDR_HI 0x10f
+#define BYTE_WRITE_ADDR_LO 0x040
 
 static int8 eeprom_i2C_addr;
 
@@ -615,6 +616,7 @@ static void Eeprom_debug_menu(void)
 
 /*		case 'P':
 		case 'p':
+		Eeprom_read()
 		ptr = SPI_Nvr_read(&buf[0],0,18);
 		ptr[MAX_PROUCT_CODE_LEN-1] = '\0';
 		sprintf((char *)tmpstr,"\n\r%s\n\r",ptr);
@@ -665,35 +667,36 @@ static void Eeprom_debug_menu(void)
 */		
 		case 'W':
 		case 'w':
-			//			n = 0;
-			// Write to address in lower 128 bytes
-			buf[0] = 0x06;
+			// do lower area of EEPROM (0x000 - 0x0ff)
+			buf[0] = (int8)(BYTE_WRITE_ADDR_LO & 0xff);
 			buf[1] = WRITE_CHAR_LOW;
 
-			Eeprom_write(eeprom_i2C_addr,(int16)buf[0],2,buf);		
+			Eeprom_write(eeprom_i2C_addr,BYTE_WRITE_ADDR_LO,2,buf);		
 			while(!ASC_Asci_tx_empty());
-			sprintf((char *)tmpstr,"\n\rData %02x written to address %04x\n\r",(int16)buf[1],(int16)buf[0]);
+			sprintf((char *)tmpstr,"\n\rData %02x written to address %04x\n\r",(int16)buf[1],(int16)BYTE_WRITE_ADDR_LO);
 			ASC_Asci_msg(tmpstr);
 
+			Eeprom_read(eeprom_i2C_addr,BYTE_WRITE_ADDR_LO,1,buf);	//read 1 byte of data from EEPROM
+
+			while(!ASC_Asci_tx_empty());
+			sprintf((char *)tmpstr,"\n\rData %02x read from address %04x\n\r",(int16)buf[1],(int16)BYTE_WRITE_ADDR_LO);
+			ASC_Asci_msg(tmpstr);
+
+			// do upper area of EEPROM (0x100 - 0x1ff)
+			buf[0] = (int8)(BYTE_WRITE_ADDR_HI & 0xff);
+			buf[1] = WRITE_CHAR_HIGH;
+
+			Eeprom_write(eeprom_i2C_addr,BYTE_WRITE_ADDR_HI,2,buf);
+			while(!ASC_Asci_tx_empty());
+			sprintf((char *)tmpstr,"\n\rData %02x written to address %04x\n\r",(int16)buf[1],(int16)BYTE_WRITE_ADDR_HI);
+			ASC_Asci_msg(tmpstr);
+
+			Eeprom_read(eeprom_i2C_addr,BYTE_WRITE_ADDR_HI,1,buf);	//read 1 byte of data from EEPROM
+
+			while(!ASC_Asci_tx_empty());
+			sprintf((char *)tmpstr,"\n\rData %02x read from address %04x\n\r",(int16)buf[1],(int16)BYTE_WRITE_ADDR_HI);
+			ASC_Asci_msg(tmpstr);
 	
-			Eeprom_read(eeprom_i2C_addr,(int16)buf[0],1,buf);	//read 1 byte of data from EEPROM
-
-			while(!ASC_Asci_tx_empty());
-			sprintf((char *)tmpstr,"\n\rData %02x read from address %04x\n\r",(int16)buf[1],(int16)buf[0]);
-			ASC_Asci_msg(tmpstr);
-	//		ASC_Asci_msg("\n\r A\n\r");
-			
-	//		ASC_Asci_msg("\n\r B\n\r");
-			
-		
-/*			// Write to upper in lower 128 bytes
-			for(x = 0 ;x < TFR_COUNT; x++)
-				buf[x] = WRITE_CHAR_HIGH;
-		
-			SPI_Nvr_write(buf,TFR_ADDR_HIGH,TFR_COUNT);
-			sprintf((char *)tmpstr,"\n\rData %02x written %d times to address %04x\n\r",(int16)buf[0],TFR_COUNT,(int16)TFR_ADDR_HIGH);
-			while(!ASC_Asci_tx_empty());
-			ASC_Asci_msg(tmpstr);*/
 			break;
 
 		case 's':
