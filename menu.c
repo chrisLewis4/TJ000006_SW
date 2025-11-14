@@ -18,8 +18,8 @@
 #include "Asci.h"
 #include "romdata.h"
 #include "i2c.h"
-#include "adc.h"
 #include "romdata.h"
+#include "main.h"
 #include <stdio.h>
 #include <string.h>
 #include <avr/pgmspace.h>
@@ -32,7 +32,6 @@ static void Debug_menu(void);
 static void Start_menu(void);
 static void I2C_menu(void);
 static void Test_menu(void);
-static void Adc_debug_menu(void);
 
 static void I2C_test(void);
 
@@ -122,7 +121,7 @@ int8 const TEST_MENU_MSG[] PROGMEM =
 	"\n\n\n\n\r"
 	"TEST MENU\n\r"
 	"============\n\r"
-	"I - I2C test\n\r"
+	"E - EEPROM test\n\r"
 	"X - Exit to Start Menu\n\r"
 };
 int8 const DEBUG_MENU_MSG[] PROGMEM =
@@ -130,8 +129,7 @@ int8 const DEBUG_MENU_MSG[] PROGMEM =
 	"\n\n\n\n\r"
 	"DEBUG MENU\n\r"
 	"=============\n\r"
-	"A - ADC test\n\r"
-	"E - EEPROM test\n\r"
+	"E - EEPROM Debug\n\r"
 	"X - Exit to Start Menu\n\r"
 };
 
@@ -146,12 +144,7 @@ int8 const I2C_MENU_MSG[] PROGMEM =
 	"Press 'X' to return to Test Menu\n\n\r"
 };
 
-int8 const ADC_DEBUG_MSG[] PROGMEM =
-{
-	"\n\n\n\n\rADC Debug"
-	"\n\r=========\n\n\r"
-	"\n\rPress X to exit\n\n\r"
-};
+
 int8 const EEPROM_DEBUG_MSG[] PROGMEM =
 {
 	"\n\n\n\n\rEEPROM Debug"
@@ -372,16 +365,13 @@ static void Debug_menu(void)
     if(!rx_byte)
         return;
 
+	
     /* now process RX char */
     switch(rx_byte)
     {
-		case 'A':
-		case 'a':
-			ADC_Init();
-			MEN_Set_cmd_bk_func(ADC_DEBUG_MSG,Adc_debug_menu);
-			break;
 		case 'E':
 		case 'e':
+			MAI_Set_power(ON);
 			I2C_Init();
 			MEN_Set_cmd_bk_func(EEPROM_ADDR_SEL_MSG,Eeprom_addr_select_menu);
 			break;
@@ -510,45 +500,6 @@ Parameters	:
 Returns		:
 Description	:
 --------------------------------------------------------------------*/
-#define CONV_FACTOR 211000L
-static void Adc_debug_menu(void)
-{
-	int32 adcval;
-	int8 rx_byte;
-	int32 adcvolts;
-	
-	if(ADC_Get_average(&adcval))
-	{
-		
-		adcvolts = (adcval * (int32)CONV_FACTOR) >> 16;
-		
-//		sprintf(tmpstr,"CH7 = %f %f %f\r",(double)adcval,(double)CONV_FACTOR, (double)adcvolts);
-		sprintf(tmpstr,"CH7 = %umV    \r",adcvolts);
-		ASC_Asci_msg(tmpstr);
-	}
-	
-
-	rx_byte = Cmd_check(CMD_ECHO);
-	/* return if none available */
-	if(!rx_byte)
-	return;
-
-	/* now process RX char */
-	switch(rx_byte)
-	{
-		case 'x':
-		case 'X':
-			ADC_Shutdown();
-			MEN_Set_cmd_bk_func(DEBUG_MENU_MSG,Debug_menu);
-			break;
-	}
-}
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
 #define EEPROM_BYTE_COUNT 512
 #define EEPROM_PAGE_SIZE 16
 #define BYTE_WRITE_ADDR_HI 0x10f
@@ -583,6 +534,8 @@ static void Eeprom_addr_select_menu(void)
 		case 'x':
 		case 'X':
 			MEN_Set_cmd_bk_func(DEBUG_MENU_MSG,Debug_menu);
+			MAI_Set_power(OFF);
+
 			return;	
 		default:
 			ASC_Asci_msg((int8 *const)ROM_Read_romstr(CMD_NOT_IMPLEMENTED_MSG));
@@ -711,6 +664,7 @@ static void Eeprom_debug_menu(void)
 		case 'X':
 		case 'x':
 			MEN_Set_cmd_bk_func(DEBUG_MENU_MSG,Debug_menu);
+			MAI_Set_power(OFF);
 			return;
 			break;
 		default:
@@ -719,7 +673,7 @@ static void Eeprom_debug_menu(void)
 		
 	}
 	MEN_Set_cmd_bk_func(EEPROM_DEBUG_MSG,Eeprom_debug_menu);
-
+ 
 
 }
 /*====================================================================

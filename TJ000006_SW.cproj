@@ -143,12 +143,6 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ADC.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="ADC.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="asci.c">
       <SubType>compile</SubType>
     </Compile>
@@ -168,6 +162,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="main.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="main.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="menu.c">

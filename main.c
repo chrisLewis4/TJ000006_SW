@@ -93,6 +93,12 @@ void MAI_Set_but(BUT But)
 	but  = But;
 }
 
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
 
 void initIO(void)
 {
@@ -104,6 +110,9 @@ void initIO(void)
 	DEBUG_LO;
 	DEBUG_HI;
 	DEBUG_LO;
+	
+	// set power control port as output
+	DDRB |= BIT0;
 	/* Pin Mapping
 	AVR - Arduino - Datalogger - LCD
 	
@@ -137,7 +146,19 @@ void initIO(void)
 	DDRC = 0x00
 	DDRD = 0x00*/
 }
-
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+void MAI_Set_power(ONOFF_ENUM stat)
+{
+	if (stat == ON)	
+		PORTB |= BIT0;
+	else
+		PORTB &= ~BIT0;
+}
 
 /*********************************************************************
 *						End of main.c								 *
