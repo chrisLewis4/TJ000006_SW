@@ -364,7 +364,7 @@ static void Debug_menu(void)
     /* return if none available */
     if(!rx_byte)
         return;
-
+ 
 	
     /* now process RX char */
     switch(rx_byte)

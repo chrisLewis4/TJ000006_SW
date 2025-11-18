@@ -1,48 +1,47 @@
-/********************************************************************
-*																	*
-*	Filename:		main.c											*
-*	Originator:		Chris Lewis										*
-*	Project:		Interface Board I2C Test Software				*
-*	Description:													*
-*																	*
-********************************************************************/
- 
+/*
+ * Timer.c
+ *
+ * Created: 17/11/2025 16:27:51
+ *  Author: chris.lewis
+ */ 
+
 /*==================================================================*/
 /*							INCLUDE FILES							*/
 /*==================================================================*/
 
 #include "ATMtypes.h"
-
-#include "i2c.h"
-#include "asci.h"
-#include "menu.h"
-#include "Timer.h"
+#include "timer.h"
 #include <avr/io.h>
-#include <stdio.h>
-#include <util/delay.h>  
-#include <avr/interrupt.h>   
+#include <avr/interrupt.h>
 
 /*==================================================================*/
 /*						LOCAL MACRO DEFINITIONS						*/
 /*==================================================================*/
+
 /*==================================================================*/
 /*						LOCAL CONSTANT DEFINITIONS					*/
 /*==================================================================*/
-	
+// Aduino Nano A00005 runs at clock speed of 16MHz
+
+#define CLK_DIV8 0x02
+#define COUNT_1MS 2000
+
 /*==================================================================*/
 /*		LOCAL INITIALISED VARIABLES (initialised to 0 by default)	*/
 /*==================================================================*/
-int8 tmpstr[TMPSTR_LEN];
+static int16 volatile set_delay,delay_cnt;
+static int8 volatile delay_flag;
+
 /*==================================================================*/
 /* 						LOCAL FUNCTION PROTOTYPES 					*/
 /*==================================================================*/
 
-void initIO(void);
+
 
 /*==================================================================*/
 /* 								FUNCTIONS 							*/
 /*==================================================================*/
-static BUT but;
+
 
 
 /*====================================================================
@@ -51,139 +50,71 @@ Parameters	:
 Returns		:
 Description	:
 --------------------------------------------------------------------*/
-int main(void)
+void TIM_Init_timer(void)
 {
-	int8 c,tmp;
-	int8 buf[20];
+	set_delay = 0;
+	delay_cnt = 0;
+	delay_flag = FALSE;
 	
-	int8 x;
+	//TCCR1B = 0;
 	
-//	sei();
-	initIO();
-	ASC_Init_asci();
 	
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+void TIM_Delay(int16 millisecs)
+{
+	set_delay = millisecs;
+	delay_cnt = 0;
+	TCNT1 = 0;				// reset TCNT
+	//TCCR1B |= (1 << WGM12);	// set CTC mode
+	OCR1A = COUNT_1MS;		// Set 1ms Count
+	TIMSK1 |= (1 << OCIE1A);//Enable compare match int
+	// Set clock speed to 1MHz to start clock
+	TCCR1B |= CLK_DIV8;
 		
-// DISPLAY INSTRUCTIONS
-
-	MEN_Init();
-	TIM_Init_timer();
-	MAI_Set_power(ON);
-	
-	tmp = TRUE;
-	TIM_Delay(1000);
-
-	//Enter Endless loop
-	while(1) 
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+int8 TIM_Get_delay_flag(void)
+{
+	if(delay_flag)
 	{
-			
-		if(TIM_Get_delay_flag())
-		{
-			if(tmp)
-			{
-				MAI_Set_power(OFF);
-				tmp = FALSE;
-			}
-			else
-			{
-				MAI_Set_power(ON);
-				tmp = TRUE;
-			}
-			
-			TIM_Delay(1000);
-		}
-		MEN_bkproc();	
+		delay_flag = FALSE;
+		return TRUE;
+	}
+	return FALSE;
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+ISR(TIMER1_COMPA_vect)
+{
+
+	if(++delay_cnt == set_delay)
+	{
+		// Count is done so stop timer
+		TCCR1B = 0;
+		TIMSK1 &= ~(1 << OCIE1A);//Disable compare match int
+		delay_flag = true;
+	}
+	else
+	{
+		// count has not finished to add another 1ms to compare match
+		OCR1A += COUNT_1MS;
 	}
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
-BUT MAI_Get_but(void)
-{
-	return but;
-}
-
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
-void MAI_Set_but(BUT But)
-{
-	but  = But;
-}
-
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
-
-void initIO(void)
-{
-	DDRD |= BIT7; //Set Port D Bit 7 as Debug port
-	DEBUG_LO;
-	DEBUG_HI;
-	DEBUG_LO;
-	DEBUG_HI;
-	DEBUG_LO;
-	DEBUG_HI;
-	DEBUG_LO;
-	
-	// set power control port as output
-	DDRB |= BIT0;
-
-	/* Pin Mapping
-	AVR - Arduino - Datalogger - LCD
-	
-	PD0 = D0	=      NC
-	PD1 = D1	=      NC
-	PD2 = D2	=      NC
-	PD3 = D3	=      NC
-	PD4 = D4	=      NC
-	PD5 = D5	=      NC
-	PD6 = D6	=      NC
-	PD7 = D7	=      NC
-	
-	PB0 = D8	=      NC
-	PB1 = D9	=      NC
-	PB2 = D10	=      NC
-	PB3 = D11	=      NC
-	PB4 = D12	=      NC
-	PB5 = D13	=      NC
-	PB6 = X1
-	PB7 = X2
-	
-	PC0 = A0   =     
-	PC1 = A1
-	PC2 = A2
-	PC3 = A3
-	PC4 = A4   =      SDA
-	PC5 = A5   =      SCL
-	
-	
-	DDRB = 0x00
-	DDRC = 0x00
-	DDRD = 0x00*/
-}
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
-void MAI_Set_power(ONOFF_ENUM stat)
-{
-	if (stat == ON)	
-		PORTB |= BIT0;
-	else
-		PORTB &= ~BIT0;
-}
-
 /*********************************************************************
-*						End of main.c								 *
+*						End of Timer.c								 *
 *********************************************************************/
