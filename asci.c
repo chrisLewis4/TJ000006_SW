@@ -129,7 +129,7 @@ Description	:Low level tx function
  			 passed.                                                  
  			 If asci TX is not already enabled it starts the tx process.
 --------------------------------------------------------------------*/
-int8 ASC_Asci_tx(int8 *ptr,int8 count)
+int8 ASC_Asci_tx(const int8 *ptr,int8 count)
 {
 	int8 x,ip;
 

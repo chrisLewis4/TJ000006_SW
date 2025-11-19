@@ -44,7 +44,7 @@ typedef enum validascireturncodes {
 extern void ASC_Init_asci(void);
 extern void ASC_Shutdown_asci(void);
 /* ASCI Interface functions */
-extern int8 ASC_Asci_tx(int8 *ptr,int8 count);
+extern int8 ASC_Asci_tx(const int8 *ptr,int8 count);
 extern int8 ASC_Asci_getchar(int8 *c);
 extern int8 ASC_Asci_msg(int8 *msg);
 extern int8 ASC_Get_asci_tx_space(void);

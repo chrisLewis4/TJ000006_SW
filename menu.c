@@ -17,10 +17,9 @@
 #include "menu.h"
 #include "Asci.h"
 #include "romdata.h"
-#include "i2c.h"
-#include "romdata.h"
 #include "main.h"
 #include "version.h"
+#include "Timer.h"
 #include <stdio.h>
 #include <string.h>
 #include <avr/pgmspace.h>
@@ -29,12 +28,20 @@
 /*==================================================================*/
 /*                      LOCAL FUNCTION PROTOTYPES                   */
 /*==================================================================*/
+// main menus
 static void Debug_menu(void);
 static void Start_menu(void);
-static void I2C_menu(void);
-static void Test_menu(void);
+//data entry funcs
+static void Get_wo_no(void);
+static void Get_assy_no(void);
+static void Get_assy_rev_no(void);
+static void Bd_test_start_menu(void);
+static void Start_eeprom_prog(void);
+static void Get_serial_no(void);
+static void Connect_bd_menu(void);
 
 static void I2C_test(void);
+static void I2C_menu(void);
 
 
 static void Test_msg_func(void);
@@ -55,9 +62,8 @@ static void Eeprom_fill(int8 set_char);
 /*==================================================================*/
 /*                      LOCAL MACRO DEFINITIONS                     */
 /*==================================================================*/
-#define STM_I2C_ADDR 0x10
-#define DISPLAY_AMP_ERROR_CODE 0x11
-
+// User input defines
+#define MAX_USER_IP_LEN 20
 
 /* definition used to echo the terminal keys pressed */
 #define CMD_ECHO        TRUE
@@ -81,19 +87,14 @@ static void Eeprom_fill(int8 set_char);
 #define PRODUCT_SN_EEPROM_ADDR 9
 #define PRODUCT_SN_MAX_LEN 14
 
-//Trigger func definitions
-#define PULSE_WIDTH_100		100
-#define PULSE_WIDTH_150		150
-#define PULSE_WIDTH_1000	1000
-#define PULSE_WIDTH_2000	2000
-
 #define DELAY_COUNT 1000
 
 /*==================================================================*/
 /*                      GLOBAL CONSTANT DEFINITIONS                  */
 /*==================================================================*/
 int8 const NEWLINE_MSG[] PROGMEM =		{"\n\r"};
-	
+int8 const NEWPAGE_MSG[] PROGMEM =		{"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\r"};
+int8 const DOT_MSG[] PROGMEM =		{"."};
 /*==================================================================*/
 /*                      LOCAL CONSTANT DEFINITIONS                  */
 /*==================================================================*/
@@ -101,7 +102,8 @@ int8 const NEWLINE_MSG[] PROGMEM =		{"\n\r"};
  int8 const COPYRIGHT_MSG[]  PROGMEM =	{"\n\n\n\n\n\n\n\n\n\n\n\r(c) Copyright The Magstim Company Ltd. 2025\n\n\r"};
  
  int8 const OPENING_MENU_MSG[] PROGMEM = {"\n\n\rEEG Net Connector - I2C EEPROM Programmer\n\r"
-                                          "=========================================\n\n\r"};
+                                          "=========================================\n\r"
+										  "Firmware ID: "};
  /* common menu messages */
  static int8 const CMD_NOT_IMPLEMENTED_MSG[] PROGMEM =	{" Command not implemented\n\r"};
  
@@ -117,13 +119,62 @@ int8 const START_MENU_MSG[] PROGMEM =
 	"D - Debug Menu\n\r"
 	"<ENTER>- To refresh screen\n\n\r"
 };
-int8 const TEST_MENU_MSG[] PROGMEM =
+int8 const ENTER_WO_MSG[] PROGMEM =
 {
-	"\n\n\n\n\r"
-	"TEST MENU\n\r"
-	"============\n\r"
-	"E - EEPROM test\n\r"
-	"X - Exit to Start Menu\n\r"
+	"\n\n\n\r"
+	"Enter the Works Order No (WO) of the batch of boards Under Test\n\r"
+};
+int8 const ENTER_ASSY_NO_MSG[] PROGMEM =
+{
+	"\n\n\n\r"
+	"Enter the board's Assembly No of the batch of boards Under Test\n\r"
+};
+int8 const ENTER_ASSY_REV_MSG[] PROGMEM =
+{
+	"\n\n\n\r"
+	"Enter the board's Assembly Revision No of the batch of boards Under Test\n\r"
+};
+int8 const CHECK_DETAILS_MSG[] PROGMEM =
+{
+	"\n\n\n\r"
+	"Check the following details are correct\n\r"
+	"Press 'X' to exit or any other key to proceed\n\r"
+};
+
+int8 const ENTER_SN_MSG[] PROGMEM =
+{
+	"\n\n\n\r"
+	"Enter the board's Serial No\n\r"
+};
+int8 const ENTER_NEXT_SN_MSG[] PROGMEM =
+{
+	"\n\n\n\r"
+	"Enter the Next board's Serial No\n\r"
+};
+
+int8 const CONNECT_BD_MSG[] PROGMEM =
+{
+	"\n\n\n\r"
+	"Connect the board Under Test to the Jig\n\r"
+	"ENSURE FLYING LEAD IS CONNCTED to JUMPER\n\r"
+	"Press 'X' to exit or any other key to proceed\n\r"
+};
+
+int8 const PROG_EEPROM_MSG[] PROGMEM =
+{
+	"\n\n\n\r"
+	"Automatically checking and Programming EEPROM\n\r"
+};
+
+int8 const PROG_SUCCESS_MSG[] PROGMEM =
+{
+	"SUCCESSFULLY Checked and Programmed EEPROM!!\n\n\r"
+	"Remove Board and apply TESTED MARK\n\n\r"
+};
+
+int8 const MAX_USER_IP_LEN_EXEEDED_MSG[] PROGMEM =
+{
+	"\n\rToo many characters entered - Please retry\n\r"	
 };
 int8 const DEBUG_MENU_MSG[] PROGMEM =
 {
@@ -133,18 +184,6 @@ int8 const DEBUG_MENU_MSG[] PROGMEM =
 	"E - EEPROM Debug\n\r"
 	"X - Exit to Start Menu\n\r"
 };
-
-int8 const I2C_MENU_MSG[] PROGMEM =
-{
-	"\n\n\n\n\rI2C Test"
-	"\n\r========\n\n\r"
-	"Ensure the Module is Programmed as a Master\n\r"
-	"Connect the Touch Panel LCD to the Module and switch ON\n\n\r"
-	"The '+' key will increment the AMP CODE value displayed by 1\n\r"
-	"The '-' key will decrement the AMP CODE value displayed by 1\n\r"
-	"Press 'X' to return to Test Menu\n\n\r"
-};
-
 
 int8 const EEPROM_DEBUG_MSG[] PROGMEM =
 {
@@ -178,6 +217,20 @@ static void (*next_cmd_func)(void);
 
 static const int8 *MEN_MSG_PTR;
 
+static int8 user_ip_buf[MAX_USER_IP_LEN+1];
+static int8 user_ip_buf_ix;
+static int8 user_ip_max_chars;
+
+#define MAX_WO_STRING_LEN 10
+#define MAX_BD_ASSY_STRING_LEN 5
+#define MAX_BD_ASSY_REV_STRING_LEN 4
+#define MAX_BD_SN_STRING_LEN 4
+
+static int8 wo_no_str[MAX_WO_STRING_LEN];
+static int8 assy_no_str[MAX_BD_ASSY_STRING_LEN];
+static int8 assy_rev_str[MAX_BD_ASSY_REV_STRING_LEN];
+static int8 serial_no_str[MAX_BD_SN_STRING_LEN];
+
 /*********************************************************************
 *                               FUNCTIONS                            *
 *********************************************************************/
@@ -190,9 +243,11 @@ Description :Initializes some of the test module variables just in case
 --------------------------------------------------------------------*/
 void MEN_Init(void)
 {
-	ASC_Asci_msg((int8 *const)ROM_Read_romstr(COPYRIGHT_MSG));	//display Copyright msg
-	ASC_Asci_msg((int8 *const)ROM_Read_romstr(OPENING_MENU_MSG));//display Opening msg
-	MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu); // Set start menu
+	ASC_Asci_msg((int8 *const)ROM_Read_romstr(COPYRIGHT_MSG));		//display Copyright msg
+	ASC_Asci_msg((int8 *const)ROM_Read_romstr(OPENING_MENU_MSG));	//display Opening msg
+	ASC_Asci_msg((int8 *const)ROM_Read_romstr(VER_Get_sw_pn()));	//Display Firmware PN and Version
+	ASC_Asci_msg("\n\n\r");
+	MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu); // Display start menu
 }
 
 
@@ -337,7 +392,9 @@ static void Start_menu(void)
 	{
 		case 'T':
 		case 't':
-			MEN_Set_cmd_bk_func(TEST_MENU_MSG,Test_menu);
+			user_ip_buf_ix = 0;	//reset user input buf index
+			user_ip_max_chars = MAX_WO_STRING_LEN;
+			MEN_Set_cmd_bk_func(ENTER_WO_MSG,Get_wo_no);
 			break;
 		case 'D':
 		case 'd':
@@ -349,6 +406,262 @@ static void Start_menu(void)
 		break;
 	}
 }
+
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+static void Get_wo_no(void)
+{
+	int8 rx_byte;
+
+	/* get any RX chars */
+	rx_byte = Cmd_check(CMD_ECHO);
+	/* return if none available */
+	if(!rx_byte)
+	return;
+
+	/* now process RX char */
+	switch(rx_byte)
+	{
+		case '\n':
+		case '\r':
+			user_ip_buf[user_ip_buf_ix] = 0; // terminate string
+			strcpy(wo_no_str,user_ip_buf);	// copy string
+			user_ip_buf_ix = 0;							//reset user input buf index
+			user_ip_max_chars = MAX_BD_ASSY_STRING_LEN; // Set max chars for assy
+            ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+			MEN_Set_cmd_bk_func(ENTER_ASSY_NO_MSG,Get_assy_no);
+			break;
+		default:
+			user_ip_buf[user_ip_buf_ix] = rx_byte;
+			if(++user_ip_buf_ix >= user_ip_max_chars)
+			{
+				ASC_Asci_msg((int8 *const)ROM_Read_romstr(MAX_USER_IP_LEN_EXEEDED_MSG));
+				user_ip_buf_ix = 0;	//reset user input buf index
+				user_ip_max_chars = MAX_WO_STRING_LEN;
+				MEN_Set_cmd_bk_func(ENTER_WO_MSG,Get_wo_no);
+			}		
+		break;
+	}
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+static void Get_assy_no(void)
+{
+	int8 rx_byte;
+
+	/* get any RX chars */
+	rx_byte = Cmd_check(CMD_ECHO);
+	/* return if none available */
+	if(!rx_byte)
+	return;
+
+	/* now process RX char */
+	switch(rx_byte)
+	{
+		case '\n':
+		case '\r':
+			user_ip_buf[user_ip_buf_ix] = 0; // terminate string
+			strcpy(assy_no_str,user_ip_buf);
+			user_ip_buf_ix = 0;	//reset user input buf index
+			user_ip_max_chars = MAX_BD_ASSY_REV_STRING_LEN;
+			MEN_Set_cmd_bk_func(ENTER_ASSY_REV_MSG,Get_assy_rev_no);
+			break;
+		default:
+			user_ip_buf[user_ip_buf_ix] = rx_byte;
+			if(++user_ip_buf_ix >= user_ip_max_chars)
+			{
+				ASC_Asci_msg((int8 *const)ROM_Read_romstr(MAX_USER_IP_LEN_EXEEDED_MSG));
+				user_ip_buf_ix = 0;	//reset user input buf index
+				user_ip_max_chars = MAX_BD_ASSY_STRING_LEN;
+				MEN_Set_cmd_bk_func(ENTER_ASSY_NO_MSG,Get_assy_no);
+			}
+			break;
+	}
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+static void Get_assy_rev_no(void)
+{
+int8 rx_byte;
+
+	/* get any RX chars */
+	rx_byte = Cmd_check(CMD_ECHO);
+	/* return if none available */
+	if(!rx_byte)
+		return;
+
+	/* now process RX char */
+	switch(rx_byte)
+	{
+		case '\n':
+		case '\r':
+			user_ip_buf[user_ip_buf_ix] = 0; // terminate string
+			strcpy(assy_rev_str,user_ip_buf);
+			// Display entered data
+			ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+			MEN_Set_cmd_bk_func(CHECK_DETAILS_MSG,Bd_test_start_menu);
+			sprintf(tmpstr,"WO No = %s\n\rAssy Details = %s-01-%s\n\r",wo_no_str,assy_no_str,assy_rev_str);
+			ASC_Asci_msg(tmpstr);
+			break;
+		default:
+			user_ip_buf[user_ip_buf_ix] = rx_byte;
+			if(++user_ip_buf_ix >= user_ip_max_chars)
+			{
+				ASC_Asci_msg((int8 *const)ROM_Read_romstr(MAX_USER_IP_LEN_EXEEDED_MSG));
+				user_ip_buf_ix = 0;	//reset user input buf index
+				user_ip_max_chars = MAX_BD_ASSY_REV_STRING_LEN;
+				MEN_Set_cmd_bk_func(ENTER_ASSY_REV_MSG,Get_assy_rev_no);
+			}
+		break;
+	}
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+
+static void Bd_test_start_menu(void)
+{
+	int8 rx_byte;
+
+	// get any RX chars *
+	rx_byte = Cmd_check(CMD_ECHO);
+	// return if none available
+	if(!rx_byte)
+	return;
+
+	// now process RX char
+	switch(rx_byte)
+	{
+		case 'X':
+		case 'x':
+			ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+			MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu);
+			break;
+		default:
+			user_ip_buf_ix = 0;	//reset user input buf index
+			user_ip_max_chars = MAX_BD_SN_STRING_LEN;
+			MEN_Set_cmd_bk_func(ENTER_SN_MSG,Get_serial_no);
+	}
+}
+
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+
+static void Get_serial_no(void)
+{
+	int8 rx_byte;
+
+	// get any RX chars *
+	rx_byte = Cmd_check(CMD_ECHO);
+	// return if none available 
+	if(!rx_byte)
+	return;
+
+	// now process RX char 
+	switch(rx_byte)
+	{
+		case '\n':
+		case '\r':
+			user_ip_buf[user_ip_buf_ix] = 0; // terminate string
+			strcpy(serial_no_str,user_ip_buf);
+			MEN_Set_cmd_bk_func(CONNECT_BD_MSG,Connect_bd_menu);
+			break;
+		default:
+		user_ip_buf[user_ip_buf_ix] = rx_byte;
+		if(++user_ip_buf_ix >= user_ip_max_chars)
+		{
+			ASC_Asci_msg((int8 *const)ROM_Read_romstr(MAX_USER_IP_LEN_EXEEDED_MSG));
+			MEN_Set_cmd_bk_func(Get_serial_no,ENTER_SN_MSG);
+		}
+		break;
+	}
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+static void Connect_bd_menu(void)
+{
+	int8 rx_byte;
+
+	// get any RX chars *
+	rx_byte = Cmd_check(CMD_ECHO);
+	// return if none available
+	if(!rx_byte)
+	return;
+
+	// now process RX char
+	switch(rx_byte)
+	{
+		case 'x':
+		case 'X':
+			MEN_Set_cmd_bk_func(ENTER_SN_MSG,Get_serial_no);
+			break;
+		default:
+			MEN_Set_cmd_bk_func(PROG_EEPROM_MSG,Start_eeprom_prog);
+	}
+	
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+static void Start_eeprom_prog(void)
+{
+	int8 x;
+	
+	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+	sprintf(tmpstr,"Programming Board %s-%s\n\r",wo_no_str,serial_no_str);
+	ASC_Asci_msg(tmpstr);
+	// Do Header Check
+	//***************************************
+	// Test Func
+	MAI_Set_power(ON);
+	for(x = 0;x < 10;x++)
+	{
+		ASC_Asci_msg(ROM_Read_romstr(DOT_MSG));
+		TIM_Delay(200);
+		while(!TIM_Get_delay_flag());	
+	}
+	//***************************************
+
+	MAI_Set_power(OFF);
+	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+	ASC_Asci_msg(ROM_Read_romstr(PROG_SUCCESS_MSG));
+
+	// Set Params for SN
+	user_ip_buf_ix = 0;	//reset user input buf index
+	user_ip_max_chars = MAX_BD_SN_STRING_LEN;
+
+	MEN_Set_cmd_bk_func(ENTER_NEXT_SN_MSG,Get_serial_no);
+
+}
+//********************************************************************
+//********************************************************************
+//********************************************************************
 /*====================================================================
 Name        :Debug_menu
 Parameters  :NONE
@@ -387,114 +700,7 @@ static void Debug_menu(void)
     }
 }
 
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
-static void Test_menu(void)
-{
-	int8 rx_byte;
 
-	/* get any RX chars */
-	rx_byte = Cmd_check(CMD_ECHO);
-	/* return if none available */
-	if(!rx_byte)
-	return;
-
-	/* now process RX char */
-	switch(rx_byte)
-	{
-		case 'I':
-		case 'i':
-			MEN_Set_cmd_bk_func(I2C_MENU_MSG,I2C_menu);
-			break;
-		case 'x':
-		case 'X':
-			MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu);
-			break;
-		default:
-			MEN_Set_cmd_bk_func(DEBUG_MENU_MSG,Debug_menu);
-			break;
-	}
-
-
-	
-}
-
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
-static int8 cur_i2c_err_code;
-
-static void I2C_menu(void)
-{
-	int8 buf[5];
-
-
-	I2C_Init();
-	
-	// Set initial AMP CODE to 1
-	cur_i2c_err_code = 1;
-	// Display Current AMP CODE on terminal
-	sprintf((char *)tmpstr,"Displaying %02x\r",cur_i2c_err_code);
-	ASC_Asci_msg(tmpstr);
-				
-	//Set i2c data buffer
-	buf[0] = DISPLAY_AMP_ERROR_CODE;	// set code to display AMP CODE on LCD
-	buf[1] = cur_i2c_err_code;	// Set data to display as AMP CODE on LCD
-				
-	// Send 2 bytes of data stored in buf, to STM I2C interface
-	I2C_Write(STM_I2C_ADDR,2,buf);
-				
-	MEN_Set_cmd_bk_func(NULL,I2C_test);
-}
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
-	
-static void I2C_test(void)
-{
-	int8 rx_byte;
-	int8 buf[5];
-
-
-	/* get any RX chars */
-	rx_byte = Cmd_check(NO_CMD_ECHO);
-	/* return if none available */
-	if(!rx_byte)
-		return;
-
-	switch(rx_byte)
-	{
-		case 'X':
-		case 'x':	
-			I2C_Shutdown();
-			MEN_Set_cmd_bk_func(TEST_MENU_MSG,Test_menu);
-			return;
-		case '+':
-			cur_i2c_err_code++;
-			break;
-		case '-':
-			cur_i2c_err_code--;
-			break;
-	}
-	// Send 2 bytes of data stored in buf, to STM I2C interface
-	sprintf((char *)tmpstr,"Displaying %02x\r",cur_i2c_err_code);
-	ASC_Asci_msg(tmpstr);
-	//Set i2c data buffer
-	buf[0] = DISPLAY_AMP_ERROR_CODE;	// set code to display AMP CODE on LCD
-	buf[1] = cur_i2c_err_code;	// Set data to display as AMP CODE on LCD
-	I2C_Write(STM_I2C_ADDR,2,buf);
-		
-} 
 /*====================================================================
 Name		:
 Parameters	:
