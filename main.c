@@ -37,7 +37,7 @@ int8 tmpstr[TMPSTR_LEN];
 /* 						LOCAL FUNCTION PROTOTYPES 					*/
 /*==================================================================*/
 
-void initIO(void);
+void InitIO(void);
 
 /*==================================================================*/
 /* 								FUNCTIONS 							*/
@@ -58,8 +58,7 @@ int main(void)
 	
 	int8 x;
 	
-//	sei();
-	initIO();
+	InitIO();
 	ASC_Init_asci();
 	
 		
@@ -67,7 +66,7 @@ int main(void)
 
 	MEN_Init();
 	TIM_Init_timer();
-	MAI_Set_power(ON);
+	//MAI_Set_power(ON);
 	
 	tmp = TRUE;
 	TIM_Delay(1000);
@@ -123,9 +122,9 @@ Returns		:
 Description	:
 --------------------------------------------------------------------*/
 
-void initIO(void)
+void InitIO(void)
 {
-	DDRD |= BIT7; //Set Port D Bit 7 as Debug port
+	DDRC |= BIT6; //Set Port C Bit 6 as Debug port
 	DEBUG_LO;
 	DEBUG_HI;
 	DEBUG_LO;
@@ -136,39 +135,6 @@ void initIO(void)
 	
 	// set power control port as output
 	DDRB |= BIT0;
-
-	/* Pin Mapping
-	AVR - Arduino - Datalogger - LCD
-	
-	PD0 = D0	=      NC
-	PD1 = D1	=      NC
-	PD2 = D2	=      NC
-	PD3 = D3	=      NC
-	PD4 = D4	=      NC
-	PD5 = D5	=      NC
-	PD6 = D6	=      NC
-	PD7 = D7	=      NC
-	
-	PB0 = D8	=      NC
-	PB1 = D9	=      NC
-	PB2 = D10	=      NC
-	PB3 = D11	=      NC
-	PB4 = D12	=      NC
-	PB5 = D13	=      NC
-	PB6 = X1
-	PB7 = X2
-	
-	PC0 = A0   =     
-	PC1 = A1
-	PC2 = A2
-	PC3 = A3
-	PC4 = A4   =      SDA
-	PC5 = A5   =      SCL
-	
-	
-	DDRB = 0x00
-	DDRC = 0x00
-	DDRD = 0x00*/
 }
 /*====================================================================
 Name		:

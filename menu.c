@@ -20,6 +20,7 @@
 #include "i2c.h"
 #include "romdata.h"
 #include "main.h"
+#include "version.h"
 #include <stdio.h>
 #include <string.h>
 #include <avr/pgmspace.h>

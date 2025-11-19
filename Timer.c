@@ -21,10 +21,13 @@
 /*==================================================================*/
 /*						LOCAL CONSTANT DEFINITIONS					*/
 /*==================================================================*/
+// 1ms timer tick definitions
 // Aduino Nano A00005 runs at clock speed of 16MHz
+// 16,000,000/64 = 250,000Hz = 4탎 Period
+// for 1ms tick: 1ms/4탎 = 250
 
-#define CLK_DIV8 0x02
-#define COUNT_1MS 2000
+#define CLK_DIV64 0x03
+#define COUNT_1MS 250
 
 /*==================================================================*/
 /*		LOCAL INITIALISED VARIABLES (initialised to 0 by default)	*/
@@ -72,10 +75,10 @@ void TIM_Delay(int16 millisecs)
 	delay_cnt = 0;
 	TCNT1 = 0;				// reset TCNT
 	//TCCR1B |= (1 << WGM12);	// set CTC mode
-	OCR1A = COUNT_1MS;		// Set 1ms Count
+	OCR1A = COUNT_1MS;		// Set 1ms Count (250 x 4탎 = 1.0ms)
 	TIMSK1 |= (1 << OCIE1A);//Enable compare match int
-	// Set clock speed to 1MHz to start clock
-	TCCR1B |= CLK_DIV8;
+	// Set clock speed to 250kHz (4탎) to start clock
+	TCCR1B |= CLK_DIV64;
 		
 }
 /*====================================================================
