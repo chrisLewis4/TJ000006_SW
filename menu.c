@@ -20,6 +20,7 @@
 #include "main.h"
 #include "version.h"
 #include "Timer.h"
+#include "i2c.h"
 #include <stdio.h>
 #include <string.h>
 #include <avr/pgmspace.h>
@@ -39,11 +40,9 @@ static void Bd_test_start_menu(void);
 static void Start_eeprom_prog(void);
 static void Get_serial_no(void);
 static void Connect_bd_menu(void);
+static void Display_assy_details(void);
 
-static void I2C_test(void);
-static void I2C_menu(void);
-
-
+// Menu stae MC funcs
 static void Test_msg_func(void);
 static int8 Cmd_check(int8);
 
@@ -122,29 +121,32 @@ int8 const START_MENU_MSG[] PROGMEM =
 int8 const ENTER_WO_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
-	"Enter the Works Order No (WO) of the batch of boards Under Test\n\r"
+	"Enter the Works Order No (WO) of the batch of boards Under Test\n\r(MAX = 10 Characters)\n\r"
 };
 int8 const ENTER_ASSY_NO_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
-	"Enter the board's Assembly No of the batch of boards Under Test\n\r"
+	"Enter the board's Assembly No of the batch of boards Under Test\n\r(4 Characters)\n\r"
 };
 int8 const ENTER_ASSY_REV_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
-	"Enter the board's Assembly Revision No of the batch of boards Under Test\n\r"
+	"Enter the board's Assembly Revision No of the batch of boards Under Test\n\r(3 Characters)\n\r"
 };
 int8 const CHECK_DETAILS_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
-	"Check the following details are correct\n\r"
-	"Press 'X' to exit or any other key to proceed\n\r"
+	"Check the following details are correct\n\n\r"
+};
+int8 const PRESS_X_OR_PROCEED_MSG[] PROGMEM =
+{
+	"Press 'X' to exit or any other key to proceed\n\n\n\r"
 };
 
 int8 const ENTER_SN_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
-	"Enter the board's Serial No\n\r"
+	"Enter the board's Serial No.\n\r(3 Characters)\n\r"
 };
 int8 const ENTER_NEXT_SN_MSG[] PROGMEM =
 {
@@ -156,7 +158,7 @@ int8 const CONNECT_BD_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
 	"Connect the board Under Test to the Jig\n\r"
-	"ENSURE FLYING LEAD IS CONNCTED to JUMPER\n\r"
+	"ENSURE FLYING LEAD IS CONNECTED to JUMPER\n\n\r"
 	"Press 'X' to exit or any other key to proceed\n\r"
 };
 
@@ -174,8 +176,18 @@ int8 const PROG_SUCCESS_MSG[] PROGMEM =
 
 int8 const MAX_USER_IP_LEN_EXEEDED_MSG[] PROGMEM =
 {
-	"\n\rToo many characters entered - Please retry\n\r"	
+	"\n\n\rToo many characters entered - Please retry\n\r"	
 };
+
+int8 const NOT_ENOUGH_ASSY_NO_IP_CHARS_MSG[] PROGMEM =
+{
+	"\n\n\rNot Enough characters entered - 4 Required\n\rPlease retry\n\r"
+};
+int8 const NOT_ENOUGH_ASSY_REV_SN_IP_CHARS_MSG[] PROGMEM =
+{
+	"\n\n\rNot Enough characters entered - 3 Required\n\rPlease retry\n\r"
+};
+
 int8 const DEBUG_MENU_MSG[] PROGMEM =
 {
 	"\n\n\n\n\r"
@@ -222,14 +234,14 @@ static int8 user_ip_buf_ix;
 static int8 user_ip_max_chars;
 
 #define MAX_WO_STRING_LEN 10
-#define MAX_BD_ASSY_STRING_LEN 5
-#define MAX_BD_ASSY_REV_STRING_LEN 4
-#define MAX_BD_SN_STRING_LEN 4
+#define BD_ASSY_STRING_LEN 4
+#define BD_ASSY_REV_STRING_LEN 3
+#define BD_SN_STRING_LEN 3
 
 static int8 wo_no_str[MAX_WO_STRING_LEN];
-static int8 assy_no_str[MAX_BD_ASSY_STRING_LEN];
-static int8 assy_rev_str[MAX_BD_ASSY_REV_STRING_LEN];
-static int8 serial_no_str[MAX_BD_SN_STRING_LEN];
+static int8 assy_no_str[BD_ASSY_STRING_LEN+1];
+static int8 assy_rev_str[BD_ASSY_REV_STRING_LEN+1];
+static int8 serial_no_str[BD_SN_STRING_LEN+1];
 
 /*********************************************************************
 *                               FUNCTIONS                            *
@@ -246,7 +258,9 @@ void MEN_Init(void)
 	ASC_Asci_msg((int8 *const)ROM_Read_romstr(COPYRIGHT_MSG));		//display Copyright msg
 	ASC_Asci_msg((int8 *const)ROM_Read_romstr(OPENING_MENU_MSG));	//display Opening msg
 	ASC_Asci_msg((int8 *const)ROM_Read_romstr(VER_Get_sw_pn()));	//Display Firmware PN and Version
-	ASC_Asci_msg("\n\n\r");
+	ASC_Asci_msg(ROM_Read_romstr(NEWLINE_MSG));
+	ASC_Asci_msg(ROM_Read_romstr(NEWLINE_MSG));
+
 	MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu); // Display start menu
 }
 
@@ -429,15 +443,15 @@ static void Get_wo_no(void)
 		case '\n':
 		case '\r':
 			user_ip_buf[user_ip_buf_ix] = 0; // terminate string
-			strcpy(wo_no_str,user_ip_buf);	// copy string
+			strcpy((char *)wo_no_str,(char *)user_ip_buf);	// copy string
 			user_ip_buf_ix = 0;							//reset user input buf index
-			user_ip_max_chars = MAX_BD_ASSY_STRING_LEN; // Set max chars for assy
-            ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+			user_ip_max_chars = BD_ASSY_STRING_LEN; // Set max chars for assy
+   //         ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
 			MEN_Set_cmd_bk_func(ENTER_ASSY_NO_MSG,Get_assy_no);
 			break;
 		default:
 			user_ip_buf[user_ip_buf_ix] = rx_byte;
-			if(++user_ip_buf_ix >= user_ip_max_chars)
+			if(++user_ip_buf_ix > user_ip_max_chars)
 			{
 				ASC_Asci_msg((int8 *const)ROM_Read_romstr(MAX_USER_IP_LEN_EXEEDED_MSG));
 				user_ip_buf_ix = 0;	//reset user input buf index
@@ -468,24 +482,35 @@ static void Get_assy_no(void)
 	{
 		case '\n':
 		case '\r':
-			user_ip_buf[user_ip_buf_ix] = 0; // terminate string
-			strcpy(assy_no_str,user_ip_buf);
-			user_ip_buf_ix = 0;	//reset user input buf index
-			user_ip_max_chars = MAX_BD_ASSY_REV_STRING_LEN;
-			MEN_Set_cmd_bk_func(ENTER_ASSY_REV_MSG,Get_assy_rev_no);
+			if(user_ip_buf_ix < user_ip_max_chars)
+			{
+				ASC_Asci_msg((int8 *const)ROM_Read_romstr(NOT_ENOUGH_ASSY_NO_IP_CHARS_MSG));
+				user_ip_buf_ix = 0;	//reset user input buf index
+				user_ip_max_chars = BD_ASSY_STRING_LEN;
+				MEN_Set_cmd_bk_func(ENTER_ASSY_NO_MSG,Get_assy_no);
+			}
+			else
+			{
+				user_ip_buf[user_ip_buf_ix] = 0; // terminate string
+				strcpy((char *)assy_no_str,(char *)user_ip_buf);
+				user_ip_buf_ix = 0;	//reset user input buf index
+				user_ip_max_chars = BD_ASSY_REV_STRING_LEN;
+				MEN_Set_cmd_bk_func(ENTER_ASSY_REV_MSG,Get_assy_rev_no);
+			}
 			break;
 		default:
 			user_ip_buf[user_ip_buf_ix] = rx_byte;
-			if(++user_ip_buf_ix >= user_ip_max_chars)
+			if(++user_ip_buf_ix > user_ip_max_chars)
 			{
 				ASC_Asci_msg((int8 *const)ROM_Read_romstr(MAX_USER_IP_LEN_EXEEDED_MSG));
 				user_ip_buf_ix = 0;	//reset user input buf index
-				user_ip_max_chars = MAX_BD_ASSY_STRING_LEN;
+				user_ip_max_chars = BD_ASSY_STRING_LEN;
 				MEN_Set_cmd_bk_func(ENTER_ASSY_NO_MSG,Get_assy_no);
 			}
 			break;
 	}
 }
+
 /*====================================================================
 Name		:
 Parameters	:
@@ -507,25 +532,48 @@ int8 rx_byte;
 	{
 		case '\n':
 		case '\r':
-			user_ip_buf[user_ip_buf_ix] = 0; // terminate string
-			strcpy(assy_rev_str,user_ip_buf);
-			// Display entered data
-			ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
-			MEN_Set_cmd_bk_func(CHECK_DETAILS_MSG,Bd_test_start_menu);
-			sprintf(tmpstr,"WO No = %s\n\rAssy Details = %s-01-%s\n\r",wo_no_str,assy_no_str,assy_rev_str);
-			ASC_Asci_msg(tmpstr);
+			if(user_ip_buf_ix < user_ip_max_chars)
+			{
+				ASC_Asci_msg((int8 *const)ROM_Read_romstr(NOT_ENOUGH_ASSY_REV_SN_IP_CHARS_MSG));
+				user_ip_buf_ix = 0;	//reset user input buf index
+				user_ip_max_chars = BD_ASSY_REV_STRING_LEN;
+				MEN_Set_cmd_bk_func(ENTER_ASSY_REV_MSG,Get_assy_rev_no);
+			}
+			else
+			{
+				user_ip_buf[user_ip_buf_ix] = 0; // terminate string
+				strcpy((char *)assy_rev_str,(char *)user_ip_buf);
+				// Display entered data
+				ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+				Display_assy_details();
+			}
 			break;
 		default:
 			user_ip_buf[user_ip_buf_ix] = rx_byte;
-			if(++user_ip_buf_ix >= user_ip_max_chars)
+			if(++user_ip_buf_ix > user_ip_max_chars)
 			{
 				ASC_Asci_msg((int8 *const)ROM_Read_romstr(MAX_USER_IP_LEN_EXEEDED_MSG));
 				user_ip_buf_ix = 0;	//reset user input buf index
-				user_ip_max_chars = MAX_BD_ASSY_REV_STRING_LEN;
+				user_ip_max_chars = BD_ASSY_REV_STRING_LEN;
 				MEN_Set_cmd_bk_func(ENTER_ASSY_REV_MSG,Get_assy_rev_no);
 			}
 		break;
 	}
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+static void Display_assy_details(void)
+{
+	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+	ASC_Asci_msg(ROM_Read_romstr(CHECK_DETAILS_MSG));
+	MEN_Set_cmd_bk_func(PRESS_X_OR_PROCEED_MSG,Bd_test_start_menu);
+	sprintf((char *)tmpstr,"WO No   = %s\n\rAssy No = %s-01-%s\n\n\r",wo_no_str,assy_no_str,assy_rev_str);
+	ASC_Asci_msg(tmpstr);
+
 }
 /*====================================================================
 Name		:
@@ -554,7 +602,7 @@ static void Bd_test_start_menu(void)
 			break;
 		default:
 			user_ip_buf_ix = 0;	//reset user input buf index
-			user_ip_max_chars = MAX_BD_SN_STRING_LEN;
+			user_ip_max_chars = BD_SN_STRING_LEN;
 			MEN_Set_cmd_bk_func(ENTER_SN_MSG,Get_serial_no);
 	}
 }
@@ -579,20 +627,40 @@ static void Get_serial_no(void)
 	// now process RX char 
 	switch(rx_byte)
 	{
+		case 'x':
+		case 'X':
+			if(user_ip_buf_ix == 0)
+				Display_assy_details();
+			break;
 		case '\n':
 		case '\r':
-			user_ip_buf[user_ip_buf_ix] = 0; // terminate string
-			strcpy(serial_no_str,user_ip_buf);
-			MEN_Set_cmd_bk_func(CONNECT_BD_MSG,Connect_bd_menu);
+			if(user_ip_buf_ix < user_ip_max_chars)
+			{
+				ASC_Asci_msg((int8 *const)ROM_Read_romstr(NOT_ENOUGH_ASSY_REV_SN_IP_CHARS_MSG));
+				user_ip_buf_ix = 0;	//reset user input buf index
+				user_ip_max_chars = BD_SN_STRING_LEN;
+				MEN_Set_cmd_bk_func(ENTER_SN_MSG,Get_serial_no);
+			}
+			else
+			{
+				user_ip_buf[user_ip_buf_ix] = 0; // terminate string
+				strcpy((char *)serial_no_str,(char *)user_ip_buf);
+				ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+				sprintf((char *)tmpstr,"\n\nBoard ID: %s-%s is selected for programming\n\n\r",wo_no_str,serial_no_str);
+				ASC_Asci_msg(tmpstr);
+				MEN_Set_cmd_bk_func(CONNECT_BD_MSG,Connect_bd_menu);
+			}
 			break;
 		default:
-		user_ip_buf[user_ip_buf_ix] = rx_byte;
-		if(++user_ip_buf_ix >= user_ip_max_chars)
-		{
-			ASC_Asci_msg((int8 *const)ROM_Read_romstr(MAX_USER_IP_LEN_EXEEDED_MSG));
-			MEN_Set_cmd_bk_func(Get_serial_no,ENTER_SN_MSG);
-		}
-		break;
+			user_ip_buf[user_ip_buf_ix] = rx_byte;
+			if(++user_ip_buf_ix > user_ip_max_chars)
+			{
+				ASC_Asci_msg((int8 *const)ROM_Read_romstr(MAX_USER_IP_LEN_EXEEDED_MSG));
+				user_ip_buf_ix = 0;	//reset user input buf index
+				user_ip_max_chars = BD_SN_STRING_LEN;
+				MEN_Set_cmd_bk_func(ENTER_SN_MSG,Get_serial_no);
+			}
+			break;
 	}
 }
 /*====================================================================
@@ -616,7 +684,10 @@ static void Connect_bd_menu(void)
 	{
 		case 'x':
 		case 'X':
-			MEN_Set_cmd_bk_func(ENTER_SN_MSG,Get_serial_no);
+		Display_assy_details();
+//			MEN_Set_cmd_bk_func(ENTER_SN_MSG,Get_serial_no);
+//			MEN_Set_cmd_bk_func(CHECK_DETAILS_MSG,Bd_test_start_menu);
+			
 			break;
 		default:
 			MEN_Set_cmd_bk_func(PROG_EEPROM_MSG,Start_eeprom_prog);
@@ -634,7 +705,7 @@ static void Start_eeprom_prog(void)
 	int8 x;
 	
 	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
-	sprintf(tmpstr,"Programming Board %s-%s\n\r",wo_no_str,serial_no_str);
+	sprintf((char *)tmpstr,"Programming Board %s-%s\n\r",wo_no_str,serial_no_str);
 	ASC_Asci_msg(tmpstr);
 	// Do Header Check
 	//***************************************
@@ -654,7 +725,7 @@ static void Start_eeprom_prog(void)
 
 	// Set Params for SN
 	user_ip_buf_ix = 0;	//reset user input buf index
-	user_ip_max_chars = MAX_BD_SN_STRING_LEN;
+	user_ip_max_chars = BD_SN_STRING_LEN;
 
 	MEN_Set_cmd_bk_func(ENTER_NEXT_SN_MSG,Get_serial_no);
 
@@ -762,8 +833,8 @@ Description	:
 static void Eeprom_debug_menu(void)
 {
 	
-	int8 rx_byte, buf[MAX_PROUCT_CODE_LEN+2],n,*ptr,set_char;
-	int16 x,csum_calc;
+	int8 rx_byte, buf[MAX_PROUCT_CODE_LEN+2],n;
+	int16 x;
 	
 	/* get rx char */
 	rx_byte = Cmd_check(CMD_ECHO);
@@ -875,7 +946,7 @@ static void Eeprom_debug_menu(void)
 			return;
 			break;
 		default:
-			ASC_Asci_msg(CMD_NOT_IMPLEMENTED_MSG);
+			ASC_Asci_msg((int8 *const)ROM_Read_romstr(CMD_NOT_IMPLEMENTED_MSG));
 			break;
 		
 	}
@@ -917,7 +988,7 @@ Description	:
 --------------------------------------------------------------------*/
 static void Eeprom_write(int8 eeprom_addr,int16 byte_addr, int16 byte_count,int8 *buf)
 {
-	int8 cur_addr, addr;
+	int8 cur_addr;
 	
 	// set D8 in address according to memory location to access	
 	if(byte_addr >= 0x100)
