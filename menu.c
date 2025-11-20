@@ -409,10 +409,12 @@ static void Start_menu(void)
 			user_ip_buf_ix = 0;	//reset user input buf index
 			user_ip_max_chars = MAX_WO_STRING_LEN;
 			MEN_Set_cmd_bk_func(ENTER_WO_MSG,Get_wo_no);
+			ASC_Asci_msg((int8 *const)ROM_Read_romstr(NEWPAGE_MSG));
 			break;
 		case 'D':
 		case 'd':
 			MEN_Set_cmd_bk_func(DEBUG_MENU_MSG,Debug_menu);
+			ASC_Asci_msg((int8 *const)ROM_Read_romstr(NEWPAGE_MSG));
 			break;
 		default:
 			ASC_Asci_msg((int8 *const)ROM_Read_romstr(CMD_NOT_IMPLEMENTED_MSG));
@@ -440,6 +442,12 @@ static void Get_wo_no(void)
 	/* now process RX char */
 	switch(rx_byte)
 	{
+		case 'x':
+		case 'X':
+			if(user_ip_buf_ix == 0)
+				MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu);
+				ASC_Asci_msg((int8 *const)ROM_Read_romstr(NEWPAGE_MSG));
+			break;		
 		case '\n':
 		case '\r':
 			user_ip_buf[user_ip_buf_ix] = 0; // terminate string
@@ -480,6 +488,12 @@ static void Get_assy_no(void)
 	/* now process RX char */
 	switch(rx_byte)
 	{
+		case 'x':
+		case 'X':
+			if(user_ip_buf_ix == 0)
+				MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu);
+				ASC_Asci_msg((int8 *const)ROM_Read_romstr(NEWPAGE_MSG));
+			break;
 		case '\n':
 		case '\r':
 			if(user_ip_buf_ix < user_ip_max_chars)
@@ -530,6 +544,12 @@ int8 rx_byte;
 	/* now process RX char */
 	switch(rx_byte)
 	{
+		case 'x':
+		case 'X':
+			if(user_ip_buf_ix == 0)
+				MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu);
+				ASC_Asci_msg((int8 *const)ROM_Read_romstr(NEWPAGE_MSG));
+			break;
 		case '\n':
 		case '\r':
 			if(user_ip_buf_ix < user_ip_max_chars)
@@ -685,9 +705,6 @@ static void Connect_bd_menu(void)
 		case 'x':
 		case 'X':
 		Display_assy_details();
-//			MEN_Set_cmd_bk_func(ENTER_SN_MSG,Get_serial_no);
-//			MEN_Set_cmd_bk_func(CHECK_DETAILS_MSG,Bd_test_start_menu);
-			
 			break;
 		default:
 			MEN_Set_cmd_bk_func(PROG_EEPROM_MSG,Start_eeprom_prog);
@@ -707,6 +724,7 @@ static void Start_eeprom_prog(void)
 	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
 	sprintf((char *)tmpstr,"Programming Board %s-%s\n\r",wo_no_str,serial_no_str);
 	ASC_Asci_msg(tmpstr);
+	
 	// Do Header Check
 	//***************************************
 	// Test Func
