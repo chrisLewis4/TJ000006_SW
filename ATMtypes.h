@@ -89,6 +89,8 @@ typedef enum yesnotypes {NO,YES} YESNO_ENUM;
 typedef enum onofftypes {OFF,ON} ONOFF_ENUM;
 typedef enum enabledisable {DISABLE,ENABLE} ENABLEDISABLE_ENUM;
 typedef enum hilotypes {LO,HI} HILO_ENUM;
+typedef enum ipoptypes {IP,OP} IPOP_ENUM;
+	
                
 	/* global Port Data Direction definitions */
 #define ALL_OUTPUTS 0xff

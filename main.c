@@ -16,6 +16,7 @@
 #include "i2c.h"
 #include "asci.h"
 #include "menu.h"
+#include "main.h"
 #include "Timer.h"
 #include <avr/io.h>
 #include <stdio.h>
@@ -53,13 +54,9 @@ Description	:
 --------------------------------------------------------------------*/
 int main(void)
 {
-	int8 c,tmp;
-	int8 buf[20];
-	
-	int8 x;
-	
 	InitIO();			//Initialise port I/Os
 	ASC_Init_asci();	//Initialise Serial Comms
+	I2C_Init();
 	TIM_Init_timer();	//initialise 1ms timer tick
 	MEN_Init();			// Display Opening menu
 	
@@ -105,12 +102,12 @@ void InitIO(void)
 	DEBUG_HI;
 	DEBUG_LO;
 	DEBUG_HI;
-	DEBUG_LO;
+	DEBUG_LO; 
 	DEBUG_HI;
 	DEBUG_LO;
 	
 	// set power control port as output
-	DDRB |= BIT0;
+	DDRB |= POWER_CNTRL_BIT;
 	MAI_Set_power(OFF);
 }
 /*====================================================================
@@ -122,9 +119,31 @@ Description	:
 void MAI_Set_power(ONOFF_ENUM stat)
 {
 	if (stat == ON)	
-		PORTB |= BIT0;
+		POWER_CNTRL_PORT |= POWER_CNTRL_BIT;
 	else
-		PORTB &= ~BIT0;
+		POWER_CNTRL_PORT &= ~POWER_CNTRL_BIT;
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+int8 MAI_Set_header_cntrl(IPOP_ENUM ipop_stat, HILO_ENUM hilo_stat)
+{
+	// Check if header control is input
+	if(ipop_stat == IP)
+		DDRB &= ~HEADER_CONFIG_BIT; // Set for input
+	else
+	{	// config is output
+		DDRB |= HEADER_CONFIG_BIT; // set for output
+		// Now check for HI
+		if(hilo_stat == HI)
+			HEADER_PORT_WR |= HEADER_CONFIG_BIT; // Set port bit Hi
+		else
+			HEADER_PORT_WR &= ~HEADER_CONFIG_BIT; // Set port bit Lo
+	}
+	return HEADER_PORT_RD & HEADER_CONFIG_BIT; // return but status
 }
 
 /*********************************************************************

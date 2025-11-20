@@ -52,7 +52,8 @@ static void Eeprom_debug_menu(void);
 static void Eeprom_write(int8 eeprom_addr,int16 byte_addr,int16 byte_count,int8 *buf);
 static int8 *Eeprom_read(int8 eeprom_addr,int16 byte_addr,int16 byte_count,int8 *buf);
 static void Eeprom_fill(int8 set_char);
-
+static void Eeprom_hex_dump(void);
+static int16 Get_stored_checksum(void);
 
 /*==================================================================*/
 /*                      LOCAL TYPE DEFINITIONS                      */
@@ -81,12 +82,43 @@ static void Eeprom_fill(int8 set_char);
 
 #define EEPROM_SET_CHAR 0xff
 #define EEPROM_RESET_CHAR 0x00
+
+#define MAX_WO_STRING_LEN 11
+#define BD_ASSY_STRING_LEN 4
+#define BD_ASSY_REV_STRING_LEN 3
+#define BD_SN_STRING_LEN 3
+
 #define PRODUCT_PN_EEPROM_ADDR 0
 #define PRODUCT_PN_EEPROM_LEN 9
 #define PRODUCT_SN_EEPROM_ADDR 9
 #define PRODUCT_SN_MAX_LEN 14
 
+#define EEPROM_ADDR_LO 0x50
+#define EEPROM_ADDR_HI 0x54
+
 #define DELAY_COUNT 1000
+
+// define storage layout positions from TD6500006 Net Spec
+#define EEPROM_FINAL_PROD_NUM_LAYOUT_POS	0x00	//
+#define EEPROM_FINAL_PROD_CODE_LAYOUT_POS	0x04 // This will always be 00
+#define EEPROM_FINAL_PROD_REV_LAYOUT_POS	0x06
+#define EEPROM_FINAL_PROD_SN_LAYOUT_POS		0x09
+
+#define EEPROM_ASSY_NUM_STRING_LAYOUT_POS	0xe2 // Full PCB assy num with null termination: xxxx-01-nny/0
+#define EEPROM_ASSY_WO_STRING_LAYOUT_POS	0xef
+#define EEPROM_ASSY_SN_STRING_LAYOUT_POS	0xfa
+#define EEPROM_CHECKSUM_LAYOUT_POS			0xfe
+
+// define storage layout sizes from TD6500006 Net Spec
+#define EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE	4
+#define EEPROM_FINAL_PROD_CODE_LAYOUT_SIZE	2
+#define EEPROM_FINAL_PROD_REV_LAYOUT_SIZE	3
+#define EEPROM_FINAL_PROD_SN_LAYOUT_SIZE	13
+
+#define EEPROM_ASSY_NUM_STRING_LAYOUT_SIZE	12	// Full PCB assy num with null termination: xxxx-01-nny/0
+#define EEPROM_ASSY_WO_STRING_LAYOUT_SIZE	12	// Null terminated string padded with 0's
+#define EEPROM_ASSY_SN_STRING_LAYOUT_SIZE	4	// Null terminated string
+#define EEPROM_CHECKSUM_LAYOUT_SIZE			2   // 2 bytes - MSB first
 
 /*==================================================================*/
 /*                      GLOBAL CONSTANT DEFINITIONS                  */
@@ -146,7 +178,7 @@ int8 const PRESS_X_OR_PROCEED_MSG[] PROGMEM =
 int8 const ENTER_SN_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
-	"Enter the board's Serial No.\n\r(3 Characters)\n\r"
+	"Enter the board's Serial No.\n\r(3 Characters) or 'X' to exit\n\r"
 };
 int8 const ENTER_NEXT_SN_MSG[] PROGMEM =
 {
@@ -186,6 +218,11 @@ int8 const NOT_ENOUGH_ASSY_NO_IP_CHARS_MSG[] PROGMEM =
 int8 const NOT_ENOUGH_ASSY_REV_SN_IP_CHARS_MSG[] PROGMEM =
 {
 	"\n\n\rNot Enough characters entered - 3 Required\n\rPlease retry\n\r"
+};
+
+int8 const CHECK_HEADER_MSG[] PROGMEM =
+{
+	"\n\n\rCheck Header is fitted correctly\n\rPress 'x' to exit or any key to retry\n\r"
 };
 
 int8 const DEBUG_MENU_MSG[] PROGMEM =
@@ -233,16 +270,14 @@ static int8 user_ip_buf[MAX_USER_IP_LEN+1];
 static int8 user_ip_buf_ix;
 static int8 user_ip_max_chars;
 
-#define MAX_WO_STRING_LEN 10
-#define BD_ASSY_STRING_LEN 4
-#define BD_ASSY_REV_STRING_LEN 3
-#define BD_SN_STRING_LEN 3
-
+// Define assy info storage
 static int8 wo_no_str[MAX_WO_STRING_LEN];
 static int8 assy_no_str[BD_ASSY_STRING_LEN+1];
 static int8 assy_rev_str[BD_ASSY_REV_STRING_LEN+1];
 static int8 serial_no_str[BD_SN_STRING_LEN+1];
-
+// define EEPROM address storage
+static int8 eeprom_i2C_addr;
+static int16 cur_eeprom_checksum;
 /*********************************************************************
 *                               FUNCTIONS                            *
 *********************************************************************/
@@ -719,16 +754,53 @@ Description	:
 --------------------------------------------------------------------*/
 static void Start_eeprom_prog(void)
 {
-	int8 x;
-	
+	int8 x, rx_byte;
+
 	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
 	sprintf((char *)tmpstr,"Programming Board %s-%s\n\r",wo_no_str,serial_no_str);
 	ASC_Asci_msg(tmpstr);
+	// Turn Power on
+	MAI_Set_power(ON);
+	// Add delay to allow voltages to settle
+	TIM_Delay(1000);	
+	while(!TIM_Get_delay_flag());
 	
 	// Do Header Check
+	while(((HEADER_PORT_RD & HEADER_3V3_BIT) == 0) || ((HEADER_PORT_RD & HEADER_CONFIG_BIT) != 0))
+	{
+		ASC_Asci_msg(ROM_Read_romstr(CHECK_HEADER_MSG));	// display error message
+		sprintf((char *)tmpstr,"Header Port = %02x\n\r",(int16)HEADER_PORT_RD);
+		ASC_Asci_msg(tmpstr);
+		// wait for user input
+		do 
+		{
+			rx_byte = Cmd_check(CMD_ECHO);
+		} while (!rx_byte);
+		// return if none available
+		if((rx_byte == 'x') || (rx_byte == 'X'))
+		{
+			user_ip_buf_ix = 0;	//reset user input buf index
+			user_ip_max_chars = BD_SN_STRING_LEN;
+			MEN_Set_cmd_bk_func(ENTER_SN_MSG,Get_serial_no);
+			MAI_Set_power(OFF);
+			return;
+		}
+	}
+	// Header is ok so set config as output low
+	//****************************************
+	MAI_Set_header_cntrl(OP,LO);
+	eeprom_i2C_addr = EEPROM_ADDR_LO;
+	
+	// Now display contents and checksum & status
+	//*******************************************
+	Eeprom_hex_dump();
+	cur_eeprom_checksum = Get_stored_checksum();
+	sprintf((char *)tmpstr,"Stored Checksum = %04x\n\r",cur_eeprom_checksum);
+	ASC_Asci_msg(tmpstr);
+	
 	//***************************************
 	// Test Func
-	MAI_Set_power(ON);
+	
 	for(x = 0;x < 10;x++)
 	{
 		ASC_Asci_msg(ROM_Read_romstr(DOT_MSG));
@@ -749,6 +821,9 @@ static void Start_eeprom_prog(void)
 
 }
 //********************************************************************
+//********************************************************************
+
+
 //********************************************************************
 //********************************************************************
 /*====================================================================
@@ -775,7 +850,6 @@ static void Debug_menu(void)
 		case 'E':
 		case 'e':
 			MAI_Set_power(ON);
-			I2C_Init();
 			MEN_Set_cmd_bk_func(EEPROM_ADDR_SEL_MSG,Eeprom_addr_select_menu);
 			break;
 		case 'x':
@@ -801,7 +875,6 @@ Description	:
 #define BYTE_WRITE_ADDR_HI 0x10f
 #define BYTE_WRITE_ADDR_LO 0x040
 
-static int8 eeprom_i2C_addr;
 
 static void Eeprom_addr_select_menu(void)
 {
@@ -851,8 +924,7 @@ Description	:
 static void Eeprom_debug_menu(void)
 {
 	
-	int8 rx_byte, buf[MAX_PROUCT_CODE_LEN+2],n;
-	int16 x;
+	int8 rx_byte, buf[MAX_PROUCT_CODE_LEN+2];
 	
 	/* get rx char */
 	rx_byte = Cmd_check(CMD_ECHO);
@@ -875,7 +947,8 @@ static void Eeprom_debug_menu(void)
 		//Check for Hex Dump CMD
 		case 'H':
 		case 'h':
-			ASC_Asci_msg((int8 *)"\n\n\rHEX DUMP\n\r\n");
+			Eeprom_hex_dump();
+/*			ASC_Asci_msg((int8 *)"\n\n\rHEX DUMP\n\r\n");
 			buf[0] = 0x00;	//set initial read byte addr to 0 
 
 			for(x = 0;x < EEPROM_BYTE_COUNT;x += EEPROM_PAGE_SIZE)
@@ -892,7 +965,7 @@ static void Eeprom_debug_menu(void)
 				while(!ASC_Asci_tx_empty());
 				ASC_Asci_msg(tmpstr);
 				ASC_Asci_msg((int8 *)"\n\r");
-			}
+			}*/
 
 			break;
 /*		//Check for Checksum CMD
@@ -1061,6 +1134,47 @@ static void Eeprom_fill(int8 set_char)
 
 	}
 	while(!ASC_Asci_tx_empty());
+}
+
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+static void Eeprom_hex_dump(void)
+{
+	int8 n,buf[MAX_PROUCT_CODE_LEN+2];
+	int16 x;
+
+	ASC_Asci_msg((int8 *)"\n\n\rHEX DUMP\n\r\n");
+	buf[0] = 0x00;	//set initial read byte addr to 0
+
+	for(x = 0;x < EEPROM_BYTE_COUNT;x += EEPROM_PAGE_SIZE)
+	{
+		sprintf((char *)tmpstr,"Addr = %04x: ",x);
+		ASC_Asci_msg(tmpstr);
+				
+		Eeprom_read(eeprom_i2C_addr,x,EEPROM_PAGE_SIZE,buf);
+
+		for(n = 0; n < EEPROM_PAGE_SIZE; n++)
+		{
+			sprintf((char *)&tmpstr[(n*3)],"%02x ",buf[n+1]);
+		}
+		while(!ASC_Asci_tx_empty());
+		ASC_Asci_msg(tmpstr);
+		ASC_Asci_msg((int8 *)"\n\r");
+	}
+}
+static int16 Get_stored_checksum(void)
+{
+	int8 *ptr, buf[EEPROM_CHECKSUM_LAYOUT_SIZE+1];
+	int16 checksum;
+	
+	ptr = Eeprom_read(eeprom_i2C_addr, EEPROM_CHECKSUM_LAYOUT_POS,EEPROM_CHECKSUM_LAYOUT_SIZE, buf);
+	checksum = ((int16)(*ptr++) << 8) & 0xff00;
+	checksum |= (int16)*ptr & 0x00ff;
+	return checksum;
 }
 /*********************************************************************
 *                       End of menu.c                                *
