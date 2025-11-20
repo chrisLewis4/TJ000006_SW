@@ -54,6 +54,7 @@ static int8 *Eeprom_read(int8 eeprom_addr,int16 byte_addr,int16 byte_count,int8 
 static void Eeprom_fill(int8 set_char);
 static void Eeprom_hex_dump(void);
 static int16 Get_stored_checksum(void);
+static int16 Calc_stored_checksum(void);
 
 /*==================================================================*/
 /*                      LOCAL TYPE DEFINITIONS                      */
@@ -797,6 +798,10 @@ static void Start_eeprom_prog(void)
 	cur_eeprom_checksum = Get_stored_checksum();
 	sprintf((char *)tmpstr,"Stored Checksum = %04x\n\r",cur_eeprom_checksum);
 	ASC_Asci_msg(tmpstr);
+
+	cur_eeprom_checksum = Calc_stored_checksum();
+	sprintf((char *)tmpstr,"Stored Checksum = %04x\n\r",cur_eeprom_checksum);
+	ASC_Asci_msg(tmpstr);
 	
 	//***************************************
 	// Test Func
@@ -1144,7 +1149,7 @@ Description	:
 --------------------------------------------------------------------*/
 static void Eeprom_hex_dump(void)
 {
-	int8 n,buf[MAX_PROUCT_CODE_LEN+2];
+	int8 n,buf[EEPROM_PAGE_SIZE+2];
 	int16 x;
 
 	ASC_Asci_msg((int8 *)"\n\n\rHEX DUMP\n\r\n");
@@ -1176,6 +1181,28 @@ static int16 Get_stored_checksum(void)
 	checksum |= (int16)*ptr & 0x00ff;
 	return checksum;
 }
+static int16 Calc_stored_checksum(void)
+{
+	int8 n,buf[EEPROM_PAGE_SIZE+2];
+	int16 x, checksum, stored_sum;
+
+	checksum = 0;
+	buf[0] = 0x00;	//set initial read byte addr to 0
+
+	// add all bytes in eeprom to sum
+	for(x = 0;x < EEPROM_BYTE_COUNT;x += EEPROM_PAGE_SIZE)
+	{
+		Eeprom_read(eeprom_i2C_addr,x,EEPROM_PAGE_SIZE,buf);
+
+		for(n = 0; n < EEPROM_PAGE_SIZE; n++)
+			checksum += (int16)buf[n+1];
+	}
+	stored_sum = Get_stored_checksum();
+	checksum -= (stored_sum & 0x00ff);
+	checksum -= ((stored_sum >> 8) & 0x00ff);
+	return checksum;
+}
+
 /*********************************************************************
 *                       End of menu.c                                *
 *********************************************************************/
