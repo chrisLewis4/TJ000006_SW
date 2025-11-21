@@ -55,6 +55,8 @@ static void Eeprom_fill(int8 set_char);
 static void Eeprom_hex_dump(void);
 static int16 Get_stored_checksum(void);
 static int16 Calc_stored_checksum(void);
+static void Store_checksum(int16 checksum);
+
 
 /*==================================================================*/
 /*                      LOCAL TYPE DEFINITIONS                      */
@@ -226,6 +228,15 @@ int8 const CHECK_HEADER_MSG[] PROGMEM =
 	"\n\n\rCheck Header is fitted correctly\n\rPress 'x' to exit or any key to retry\n\r"
 };
 
+
+int8 const CHECKSUM_MISMATCH_MSG[] PROGMEM =
+{
+	"\n\n\rChecksum mismatch\n\rSetting up EEPROM\n\r"
+};
+int8 const CHECKSUM_MATCH_MSG[] PROGMEM =
+{
+	"\n\n\rCalculated and Stored Checksum Match\n\rPress 'x' to exit or any key to proceed\n\r"
+};
 int8 const DEBUG_MENU_MSG[] PROGMEM =
 {
 	"\n\n\n\n\r"
@@ -278,7 +289,7 @@ static int8 assy_rev_str[BD_ASSY_REV_STRING_LEN+1];
 static int8 serial_no_str[BD_SN_STRING_LEN+1];
 // define EEPROM address storage
 static int8 eeprom_i2C_addr;
-static int16 cur_eeprom_checksum;
+static int16 cur_calc_checksum;
 /*********************************************************************
 *                               FUNCTIONS                            *
 *********************************************************************/
@@ -756,6 +767,7 @@ Description	:
 static void Start_eeprom_prog(void)
 {
 	int8 x, rx_byte;
+	int16 cur_stored_checksum;
 
 	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
 	sprintf((char *)tmpstr,"Programming Board %s-%s\n\r",wo_no_str,serial_no_str);
@@ -795,13 +807,36 @@ static void Start_eeprom_prog(void)
 	// Now display contents and checksum & status
 	//*******************************************
 	Eeprom_hex_dump();
-	cur_eeprom_checksum = Get_stored_checksum();
-	sprintf((char *)tmpstr,"Stored Checksum = %04x\n\r",cur_eeprom_checksum);
+	cur_stored_checksum = Get_stored_checksum();
+	sprintf((char *)tmpstr,"Stored Checksum = %04x\n\r",cur_calc_checksum);
 	ASC_Asci_msg(tmpstr);
 
-	cur_eeprom_checksum = Calc_stored_checksum();
-	sprintf((char *)tmpstr,"Stored Checksum = %04x\n\r",cur_eeprom_checksum);
+	cur_calc_checksum = Calc_stored_checksum();
+	sprintf((char *)tmpstr,"Stored Checksum = %04x\n\r",cur_calc_checksum);
 	ASC_Asci_msg(tmpstr);
+	
+	if(cur_calc_checksum != cur_stored_checksum)
+	{
+		ASC_Asci_msg(ROM_Read_romstr(CHECKSUM_MISMATCH_MSG));	// display error message
+		Store_checksum(cur_calc_checksum);
+	}
+	else
+	{
+		ASC_Asci_msg(ROM_Read_romstr(CHECKSUM_MATCH_MSG));	// display match message and prompt for proceed
+		do
+		{
+			rx_byte = Cmd_check(CMD_ECHO);
+		} while (!rx_byte);
+		// return if none available
+		if((rx_byte == 'x') || (rx_byte == 'X'))
+		{
+			user_ip_buf_ix = 0;	//reset user input buf index
+			user_ip_max_chars = BD_SN_STRING_LEN;
+			MEN_Set_cmd_bk_func(ENTER_SN_MSG,Get_serial_no);
+			MAI_Set_power(OFF);
+			return;
+		}			
+	}
 	
 	//***************************************
 	// Test Func
@@ -995,10 +1030,10 @@ static void Eeprom_debug_menu(void)
 		case 'W':
 		case 'w':
 			// do lower area of EEPROM (0x000 - 0x0ff)
-			buf[0] = (int8)(BYTE_WRITE_ADDR_LO & 0xff);
-			buf[1] = WRITE_CHAR_LOW;
+		//	buf[0] = (int8)(BYTE_WRITE_ADDR_LO & 0xff);
+			buf[0] = WRITE_CHAR_LOW;
 
-			Eeprom_write(eeprom_i2C_addr,BYTE_WRITE_ADDR_LO,2,buf);		
+			Eeprom_write(eeprom_i2C_addr,BYTE_WRITE_ADDR_LO,1,buf);		
 			while(!ASC_Asci_tx_empty());
 			sprintf((char *)tmpstr,"\n\rData %02x written to address %04x\n\r",(int16)buf[1],(int16)BYTE_WRITE_ADDR_LO);
 			ASC_Asci_msg(tmpstr);
@@ -1010,10 +1045,10 @@ static void Eeprom_debug_menu(void)
 			ASC_Asci_msg(tmpstr);
 
 			// do upper area of EEPROM (0x100 - 0x1ff)
-			buf[0] = (int8)(BYTE_WRITE_ADDR_HI & 0xff);
-			buf[1] = WRITE_CHAR_HIGH;
+	//		buf[0] = (int8)(BYTE_WRITE_ADDR_HI & 0xff);
+			buf[0] = WRITE_CHAR_HIGH;
 
-			Eeprom_write(eeprom_i2C_addr,BYTE_WRITE_ADDR_HI,2,buf);
+			Eeprom_write(eeprom_i2C_addr,BYTE_WRITE_ADDR_HI,1,buf);
 			while(!ASC_Asci_tx_empty());
 			sprintf((char *)tmpstr,"\n\rData %02x written to address %04x\n\r",(int16)buf[1],(int16)BYTE_WRITE_ADDR_HI);
 			ASC_Asci_msg(tmpstr);
@@ -1082,9 +1117,12 @@ Parameters	:
 Returns		:
 Description	:
 --------------------------------------------------------------------*/
-static void Eeprom_write(int8 eeprom_addr,int16 byte_addr, int16 byte_count,int8 *buf)
+static void Eeprom_write(int8 eeprom_addr,int16 byte_addr, int16 byte_count,int8 *data)
 {
-	int8 cur_addr;
+	int8 cur_addr,x, buf[EEPROM_PAGE_SIZE+1] ;
+	
+	for(x = 0; x < byte_count;x++)
+		buf[x+1] = *data++;
 	
 	// set D8 in address according to memory location to access	
 	if(byte_addr >= 0x100)
@@ -1099,7 +1137,7 @@ static void Eeprom_write(int8 eeprom_addr,int16 byte_addr, int16 byte_count,int8
 
 	// Fist set write address by performing a dummy write
 	while(I2C_Write(cur_addr,1,buf) != 0x28); // keep trying until the EEPROM  is not busy writing
-	I2C_Write(cur_addr,byte_count,buf);	//read 1 byte of data from EEPROM
+	I2C_Write(cur_addr,byte_count+1,buf);	//write n bytes of data to EEPROM
 }
 
 /*====================================================================
@@ -1110,28 +1148,28 @@ Description	:
 --------------------------------------------------------------------*/
 static void Eeprom_fill(int8 set_char)
 {
-	int8 buf[3];
+	int8 buf;
 	int16 x,pc_complete;
 	
-	buf[1] = set_char;
+	buf = set_char;
 			
 	for(x = 0; x < EEPROM_BYTE_COUNT; x++)
 	{
 		pc_complete = ((x * 100)/EEPROM_BYTE_COUNT);
 		while(!ASC_Asci_tx_empty());
-		sprintf((char *)tmpstr,"\rResetting All of EEPROM to %02x - %03d%% done",(int16)buf[1],pc_complete+1);
+		sprintf((char *)tmpstr,"\rResetting All of EEPROM to %02x - %03d%% done",(int16)buf,pc_complete+1);
 		ASC_Asci_msg(tmpstr);
 				
 		// Write char to EEPROM
-		Eeprom_write(eeprom_i2C_addr,x,2,buf);
+		Eeprom_write(eeprom_i2C_addr,x,1,&buf);
 				
-		// Now check data ihas been set
-		Eeprom_read(eeprom_i2C_addr,x,1,buf);	//read 1 byte of data from EEPROM
+		// Now check data has been set
+		Eeprom_read(eeprom_i2C_addr,x,1,&buf);	//read 1 byte of data from EEPROM
 
-		if(buf[1] != set_char)
+		if(buf != set_char)
 		{
 			while(!ASC_Asci_tx_empty());
-			sprintf((char *)tmpstr,"\n\rErase ERR %x\n\r",(int16)buf[1]);
+			sprintf((char *)tmpstr,"\n\rErase ERR %x\n\r",(int16)buf);
 			ASC_Asci_msg(tmpstr);
 			break;
 		}
@@ -1181,6 +1219,15 @@ static int16 Get_stored_checksum(void)
 	checksum |= (int16)*ptr & 0x00ff;
 	return checksum;
 }
+static void Store_checksum(int16 checksum)
+{
+	int8 buf[EEPROM_CHECKSUM_LAYOUT_SIZE+1];
+	
+	buf[0] = (int8)(checksum >> 8) & 0xff;
+	buf[1] = (int8)(checksum & 0x00ff);
+	
+	Eeprom_write(eeprom_i2C_addr, EEPROM_CHECKSUM_LAYOUT_POS,EEPROM_CHECKSUM_LAYOUT_SIZE, buf);
+}
 static int16 Calc_stored_checksum(void)
 {
 	int8 n,buf[EEPROM_PAGE_SIZE+2];
@@ -1200,6 +1247,7 @@ static int16 Calc_stored_checksum(void)
 	stored_sum = Get_stored_checksum();
 	checksum -= (stored_sum & 0x00ff);
 	checksum -= ((stored_sum >> 8) & 0x00ff);
+	checksum = ~checksum;
 	return checksum;
 }
 
