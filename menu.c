@@ -56,6 +56,10 @@ static void Eeprom_hex_dump(void);
 static int16 Get_stored_checksum(void);
 static int16 Calc_stored_checksum(void);
 static void Store_checksum(int16 checksum);
+static int8 Get_stored_digit_string(int16 eeprom_pos, int16 size, int8 *buf);
+static int8 Get_stored_alpha_string(int16 eeprom_pos, int16 size, int8*buf);
+static void	Display_formatted_assy_info(void);
+
 
 
 /*==================================================================*/
@@ -73,33 +77,27 @@ static void Store_checksum(int16 checksum);
 #define NO_CMD_ECHO     FALSE
 
 /* NVRAM definitions */
-#define TFR_COUNT 1
-#define TFR_ADDR_LOW 0x72
-#define TFR_ADDR_HIGH 0xCC
 #define WRITE_CHAR_LOW 0x5A
 #define WRITE_CHAR_HIGH 0xA5
 
-#define MAX_PROUCT_CODE_LEN 25
 #define CHECKSUM_MSB_ADDR 0x7e
 #define CHECKSUM_LSB_ADDR 0x7f
 
 #define EEPROM_SET_CHAR 0xff
 #define EEPROM_RESET_CHAR 0x00
+#define BYTE_WRITE_ADDR_HI 0x10f
+#define BYTE_WRITE_ADDR_LO 0x040
 
 #define MAX_WO_STRING_LEN 11
 #define BD_ASSY_STRING_LEN 4
 #define BD_ASSY_REV_STRING_LEN 3
 #define BD_SN_STRING_LEN 3
 
-#define PRODUCT_PN_EEPROM_ADDR 0
-#define PRODUCT_PN_EEPROM_LEN 9
-#define PRODUCT_SN_EEPROM_ADDR 9
-#define PRODUCT_SN_MAX_LEN 14
-
 #define EEPROM_ADDR_LO 0x50
 #define EEPROM_ADDR_HI 0x54
+#define EEPROM_BYTE_COUNT 512
+#define EEPROM_PAGE_SIZE 16
 
-#define DELAY_COUNT 1000
 
 // define storage layout positions from TD6500006 Net Spec
 #define EEPROM_FINAL_PROD_NUM_LAYOUT_POS	0x00	//
@@ -223,12 +221,15 @@ int8 const NOT_ENOUGH_ASSY_REV_SN_IP_CHARS_MSG[] PROGMEM =
 	"\n\n\rNot Enough characters entered - 3 Required\n\rPlease retry\n\r"
 };
 
+int8 const NOT_ENOUGH_WO_NO_IP_CHARS_MSG[] PROGMEM =
+{
+	"\n\n\rNot Enough characters for Works Order - 1 Required\n\rPlease retry\n\r"
+};
+
 int8 const CHECK_HEADER_MSG[] PROGMEM =
 {
 	"\n\n\rCheck Header is fitted correctly\n\rPress 'x' to exit or any key to retry\n\r"
 };
-
-
 int8 const CHECKSUM_MISMATCH_MSG[] PROGMEM =
 {
 	"\n\n\rChecksum mismatch\n\rSetting up EEPROM\n\r"
@@ -237,6 +238,29 @@ int8 const CHECKSUM_MATCH_MSG[] PROGMEM =
 {
 	"\n\n\rCalculated and Stored Checksum Match\n\rPress 'x' to exit or any key to proceed\n\r"
 };
+int8 const INVALID_DATA_MSG[] PROGMEM =
+{
+	"Invalid Data"
+};
+
+int8 const PRODUCT_PN_MSG[] PROGMEM =
+{
+	"Product P/N  = "
+};
+int8 const PRODUCT_SN_MSG[] PROGMEM =
+{
+	"Product S/N  = "
+};
+int8 const PCB_ASSY_PN_MSG[] PROGMEM =
+{
+	"PCB Assy P/N = "
+};
+int8 const PCB_ASSY_SN_MSG[] PROGMEM =
+{
+	"PCB Assy S/N = "
+};
+
+
 int8 const DEBUG_MENU_MSG[] PROGMEM =
 {
 	"\n\n\n\n\r"
@@ -252,10 +276,10 @@ int8 const EEPROM_DEBUG_MSG[] PROGMEM =
 	"\n\r===========\n\n\r"
 	"P - Product Code\n\r"
 	"H - Hex Dump\n\r"
-	"K - Checksum\n\r"
 	"W - Write\n\r"
 	"R - Reset EEPROM to 00\n\r"
 	"S - Set EEPROM to FF\n\r"
+	"C - Display Checksums\n\r"
 	"X - Return to Debug Menu\n\r"
 };
 int8 const EEPROM_ADDR_SEL_MSG[] PROGMEM =
@@ -290,6 +314,8 @@ static int8 serial_no_str[BD_SN_STRING_LEN+1];
 // define EEPROM address storage
 static int8 eeprom_i2C_addr;
 static int16 cur_calc_checksum;
+static int16 cur_stored_checksum;
+
 /*********************************************************************
 *                               FUNCTIONS                            *
 *********************************************************************/
@@ -497,23 +523,42 @@ static void Get_wo_no(void)
 			break;		
 		case '\n':
 		case '\r':
-			user_ip_buf[user_ip_buf_ix] = 0; // terminate string
+			if(user_ip_buf_ix == 0)
+			{
+				ASC_Asci_msg((int8 *const)ROM_Read_romstr(NOT_ENOUGH_WO_NO_IP_CHARS_MSG));
+				user_ip_buf_ix = 0;	//reset user input buf index
+				user_ip_max_chars = MAX_WO_STRING_LEN;
+				MEN_Set_cmd_bk_func(ENTER_WO_MSG,Get_wo_no);
+				return;
+			}
+			user_ip_buf[user_ip_buf_ix] = '\0'; // terminate string
 			strcpy((char *)wo_no_str,(char *)user_ip_buf);	// copy string
 			user_ip_buf_ix = 0;							//reset user input buf index
 			user_ip_max_chars = BD_ASSY_STRING_LEN; // Set max chars for assy
-   //         ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
 			MEN_Set_cmd_bk_func(ENTER_ASSY_NO_MSG,Get_assy_no);
 			break;
 		default:
-			user_ip_buf[user_ip_buf_ix] = rx_byte;
-			if(++user_ip_buf_ix > user_ip_max_chars)
+			user_ip_buf[user_ip_buf_ix++] = rx_byte;
+/*			if(user_ip_buf_ix > user_ip_max_chars)
 			{
 				ASC_Asci_msg((int8 *const)ROM_Read_romstr(MAX_USER_IP_LEN_EXEEDED_MSG));
 				user_ip_buf_ix = 0;	//reset user input buf index
 				user_ip_max_chars = MAX_WO_STRING_LEN;
 				MEN_Set_cmd_bk_func(ENTER_WO_MSG,Get_wo_no);
 			}		
-		break;
+			else */
+			if(user_ip_buf_ix == user_ip_max_chars)
+			{
+				user_ip_buf[user_ip_buf_ix] = '\0'; // terminate string
+				strcpy((char *)wo_no_str,(char *)user_ip_buf);	// copy string
+				user_ip_buf_ix = 0;							//reset user input buf index
+				user_ip_max_chars = BD_ASSY_STRING_LEN; // Set max chars for assy
+				MEN_Set_cmd_bk_func(ENTER_ASSY_NO_MSG,Get_assy_no);
+				
+				sprintf(tmpstr,"\n\r%s\n\r",wo_no_str);
+				ASC_Asci_msg(tmpstr);
+			}
+			break;
 	}
 }
 /*====================================================================
@@ -561,12 +606,24 @@ static void Get_assy_no(void)
 			break;
 		default:
 			user_ip_buf[user_ip_buf_ix] = rx_byte;
-			if(++user_ip_buf_ix > user_ip_max_chars)
+	/*		if(++user_ip_buf_ix > user_ip_max_chars)
 			{
 				ASC_Asci_msg((int8 *const)ROM_Read_romstr(MAX_USER_IP_LEN_EXEEDED_MSG));
 				user_ip_buf_ix = 0;	//reset user input buf index
 				user_ip_max_chars = BD_ASSY_STRING_LEN;
 				MEN_Set_cmd_bk_func(ENTER_ASSY_NO_MSG,Get_assy_no);
+			}*/
+			if(++user_ip_buf_ix == user_ip_max_chars)
+			{
+				user_ip_buf[user_ip_buf_ix] = 0; // terminate string
+				strcpy((char *)assy_no_str,(char *)user_ip_buf);
+				user_ip_buf_ix = 0;	//reset user input buf index
+				user_ip_max_chars = BD_ASSY_REV_STRING_LEN;
+				MEN_Set_cmd_bk_func(ENTER_ASSY_REV_MSG,Get_assy_rev_no);
+
+				sprintf(tmpstr,"\n\r%s\n\r",assy_no_str);
+				ASC_Asci_msg(tmpstr);
+
 			}
 			break;
 	}
@@ -617,14 +674,22 @@ int8 rx_byte;
 			break;
 		default:
 			user_ip_buf[user_ip_buf_ix] = rx_byte;
-			if(++user_ip_buf_ix > user_ip_max_chars)
+	/*		if(++user_ip_buf_ix > user_ip_max_chars)
 			{
 				ASC_Asci_msg((int8 *const)ROM_Read_romstr(MAX_USER_IP_LEN_EXEEDED_MSG));
 				user_ip_buf_ix = 0;	//reset user input buf index
 				user_ip_max_chars = BD_ASSY_REV_STRING_LEN;
 				MEN_Set_cmd_bk_func(ENTER_ASSY_REV_MSG,Get_assy_rev_no);
+			}*/
+			if(++user_ip_buf_ix == user_ip_max_chars)
+			{
+				user_ip_buf[user_ip_buf_ix] = 0; // terminate string
+				strcpy((char *)assy_rev_str,(char *)user_ip_buf);
+				// Display entered data
+				ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+				Display_assy_details();
 			}
-		break;
+			break;
 	}
 }
 /*====================================================================
@@ -720,13 +785,22 @@ static void Get_serial_no(void)
 			break;
 		default:
 			user_ip_buf[user_ip_buf_ix] = rx_byte;
-			if(++user_ip_buf_ix > user_ip_max_chars)
+			if(++user_ip_buf_ix == user_ip_max_chars)
+			{
+				user_ip_buf[user_ip_buf_ix] = 0; // terminate string
+				strcpy((char *)serial_no_str,(char *)user_ip_buf);
+				ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+				sprintf((char *)tmpstr,"\n\nBoard ID: %s-%s is selected for programming\n\n\r",wo_no_str,serial_no_str);
+				ASC_Asci_msg(tmpstr);
+				MEN_Set_cmd_bk_func(CONNECT_BD_MSG,Connect_bd_menu);
+			}
+/*			if(++user_ip_buf_ix > user_ip_max_chars)
 			{
 				ASC_Asci_msg((int8 *const)ROM_Read_romstr(MAX_USER_IP_LEN_EXEEDED_MSG));
 				user_ip_buf_ix = 0;	//reset user input buf index
 				user_ip_max_chars = BD_SN_STRING_LEN;
 				MEN_Set_cmd_bk_func(ENTER_SN_MSG,Get_serial_no);
-			}
+			}*/
 			break;
 	}
 }
@@ -767,7 +841,6 @@ Description	:
 static void Start_eeprom_prog(void)
 {
 	int8 x, rx_byte;
-	int16 cur_stored_checksum;
 
 	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
 	sprintf((char *)tmpstr,"Programming Board %s-%s\n\r",wo_no_str,serial_no_str);
@@ -803,22 +876,14 @@ static void Start_eeprom_prog(void)
 	//****************************************
 	MAI_Set_header_cntrl(OP,LO);
 	eeprom_i2C_addr = EEPROM_ADDR_LO;
-	
-	// Now display contents and checksum & status
-	//*******************************************
-	Eeprom_hex_dump();
-	cur_stored_checksum = Get_stored_checksum();
-	sprintf((char *)tmpstr,"Stored Checksum = %04x\n\r",cur_calc_checksum);
-	ASC_Asci_msg(tmpstr);
 
-	cur_calc_checksum = Calc_stored_checksum();
-	sprintf((char *)tmpstr,"Stored Checksum = %04x\n\r",cur_calc_checksum);
-	ASC_Asci_msg(tmpstr);
-	
+	Display_formatted_assy_info();
+
+
+	// get, calc and dispaly checksum status
 	if(cur_calc_checksum != cur_stored_checksum)
 	{
 		ASC_Asci_msg(ROM_Read_romstr(CHECKSUM_MISMATCH_MSG));	// display error message
-		Store_checksum(cur_calc_checksum);
 	}
 	else
 	{
@@ -837,20 +902,27 @@ static void Start_eeprom_prog(void)
 			return;
 		}			
 	}
+
+	//Now set all EEPROm to 0's and store user data
+	Eeprom_fill(EEPROM_SET_CHAR); // Reset all data
+
+	sprintf((char *)tmpstr,"%s-01-%s\n\r%s-%s",assy_no_str,assy_rev_str,wo_no_str,serial_no_str);
+	ASC_Asci_msg(tmpstr);
 	
-	//***************************************
-	// Test Func
+
+	sprintf((char *)tmpstr,"%s-01-%s",assy_no_str, assy_rev_str);
+	Eeprom_write(eeprom_i2C_addr, EEPROM_ASSY_NUM_STRING_LAYOUT_POS,EEPROM_ASSY_NUM_STRING_LAYOUT_SIZE,tmpstr ); // Store PCB assy number, code and rev
+	Eeprom_write(eeprom_i2C_addr, EEPROM_ASSY_WO_STRING_LAYOUT_POS,EEPROM_ASSY_WO_STRING_LAYOUT_SIZE,wo_no_str ); // Store PCB assy number, code and rev
+	Eeprom_write(eeprom_i2C_addr, EEPROM_ASSY_SN_STRING_LAYOUT_POS,EEPROM_ASSY_SN_STRING_LAYOUT_SIZE,serial_no_str ); // Store PCB assy number, code and rev
+
+	cur_calc_checksum = Calc_stored_checksum();
+	Store_checksum(cur_calc_checksum);
+
+	Eeprom_hex_dump();
+	Display_formatted_assy_info();
 	
-	for(x = 0;x < 10;x++)
-	{
-		ASC_Asci_msg(ROM_Read_romstr(DOT_MSG));
-		TIM_Delay(200);
-		while(!TIM_Get_delay_flag());	
-	}
-	//***************************************
 
 	MAI_Set_power(OFF);
-	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
 	ASC_Asci_msg(ROM_Read_romstr(PROG_SUCCESS_MSG));
 
 	// Set Params for SN
@@ -910,10 +982,6 @@ Parameters	:
 Returns		:
 Description	:
 --------------------------------------------------------------------*/
-#define EEPROM_BYTE_COUNT 512
-#define EEPROM_PAGE_SIZE 16
-#define BYTE_WRITE_ADDR_HI 0x10f
-#define BYTE_WRITE_ADDR_LO 0x040
 
 
 static void Eeprom_addr_select_menu(void)
@@ -963,8 +1031,8 @@ Description	:
 --------------------------------------------------------------------*/
 static void Eeprom_debug_menu(void)
 {
-	
-	int8 rx_byte, buf[MAX_PROUCT_CODE_LEN+2];
+	int8 rx_byte, buf[EEPROM_PAGE_SIZE+2];
+	int16 storedsum,calcsum;
 	
 	/* get rx char */
 	rx_byte = Cmd_check(CMD_ECHO);
@@ -979,7 +1047,7 @@ static void Eeprom_debug_menu(void)
 		case 'p':
 		Eeprom_read()
 		ptr = SPI_Nvr_read(&buf[0],0,18);
-		ptr[MAX_PROUCT_CODE_LEN-1] = '\0';
+		ptr[EEPROM_PAGE_SIZE-1] = '\0';
 		sprintf((char *)tmpstr,"\n\r%s\n\r",ptr);
 		ASC_Asci_msg(tmpstr);
 		break;
@@ -988,45 +1056,17 @@ static void Eeprom_debug_menu(void)
 		case 'H':
 		case 'h':
 			Eeprom_hex_dump();
-/*			ASC_Asci_msg((int8 *)"\n\n\rHEX DUMP\n\r\n");
-			buf[0] = 0x00;	//set initial read byte addr to 0 
-
-			for(x = 0;x < EEPROM_BYTE_COUNT;x += EEPROM_PAGE_SIZE)
-			{
-				sprintf((char *)tmpstr,"Addr = %04x: ",x);
-				ASC_Asci_msg(tmpstr);
-			
-				Eeprom_read(eeprom_i2C_addr,x,EEPROM_PAGE_SIZE,buf);
-
-				for(n = 0; n < EEPROM_PAGE_SIZE; n++)
-				{
-					sprintf((char *)&tmpstr[(n*3)],"%02x ",buf[n+1]);
-				}
-				while(!ASC_Asci_tx_empty());
-				ASC_Asci_msg(tmpstr);
-				ASC_Asci_msg((int8 *)"\n\r");
-			}*/
-
 			break;
-/*		//Check for Checksum CMD
-		case 'K':
-		case 'k':
-			csum_calc = 0;
-			for(x = 0x0;x < 0x80;x += 0x10)
-			{
-				ptr = SPI_Nvr_read(buf,x,16);
-				for(n = 0; n < 16; n++)
-				{
-					csum_calc += ptr[n];
-				}
-			}
-		
+		//Check for Calc Checksum CMD
+		case 'C':
+		case 'c':
+			calcsum= Calc_stored_checksum();
+			storedsum = Get_stored_checksum();
 			while(!ASC_Asci_tx_empty());
-			sprintf((char *)tmpstr,"\n\rCalculated Checksum = %04x\n\rStored Checksum     = %02x%02x\n\r",~(csum_calc-(ptr[14]+ptr[15])),(int16)ptr[14],(int16)ptr[15]);
+			sprintf((char *)tmpstr,"\n\rCalculated Checksum = %04x\n\rStored Checksum     = %04x\n\r",calcsum,storedsum);
 			ASC_Asci_msg(tmpstr);
-
 			break;
-*/		
+		
 		case 'W':
 		case 'w':
 			// do lower area of EEPROM (0x000 - 0x0ff)
@@ -1091,9 +1131,9 @@ Parameters	:
 Returns		:
 Description	:
 --------------------------------------------------------------------*/
-static int8 *Eeprom_read(int8 eeprom_addr, int16 byte_addr,int16 byte_count,int8 *buf)
+static int8 *Eeprom_read(int8 eeprom_addr, int16 byte_addr,int16 byte_count,int8 *data)
 {
-	int8 cur_addr;
+	int8 cur_addr,x, buf[EEPROM_PAGE_SIZE+1] ;
 	
 	// set D8 in address according to memory location to access
 	if(byte_addr >= 0x100)
@@ -1109,7 +1149,9 @@ static int8 *Eeprom_read(int8 eeprom_addr, int16 byte_addr,int16 byte_count,int8
 	// Fist set read address by performing a dummy write
 	while(I2C_Write(cur_addr,1,buf) != 0x28); // keep trying until the EEPROM  is not busy writing
 	I2C_Read(cur_addr,byte_count,&buf[1]);	//read x bytes of data from EEPROM
-	return &buf[1];
+	for(x = 0; x < byte_count;x++)
+		data[x] = buf[x+1];
+	return data;
 }
 /*====================================================================
 Name		:
@@ -1202,7 +1244,7 @@ static void Eeprom_hex_dump(void)
 
 		for(n = 0; n < EEPROM_PAGE_SIZE; n++)
 		{
-			sprintf((char *)&tmpstr[(n*3)],"%02x ",buf[n+1]);
+			sprintf((char *)&tmpstr[(n*3)],"%02x ",buf[n]);
 		}
 		while(!ASC_Asci_tx_empty());
 		ASC_Asci_msg(tmpstr);
@@ -1215,8 +1257,14 @@ static int16 Get_stored_checksum(void)
 	int16 checksum;
 	
 	ptr = Eeprom_read(eeprom_i2C_addr, EEPROM_CHECKSUM_LAYOUT_POS,EEPROM_CHECKSUM_LAYOUT_SIZE, buf);
-	checksum = ((int16)(*ptr++) << 8) & 0xff00;
-	checksum |= (int16)*ptr & 0x00ff;
+
+	checksum = ((int16)ptr[0] << 8) & 0xff00;
+	checksum |= (int16)ptr[1] & 0x00ff;
+
+//	sprintf((char *)tmpstr,"\n\rAddr = %04x:\n\rPos = %04x\n\rData size = %04x\n\rData = %02x,%02x\n\rChecksum = %04x\n\n\r",eeprom_i2C_addr,EEPROM_CHECKSUM_LAYOUT_POS,EEPROM_CHECKSUM_LAYOUT_SIZE,(int16)ptr[0],(int16)ptr[1],checksum);
+//	ASC_Asci_msg(tmpstr);
+
+
 	return checksum;
 }
 static void Store_checksum(int16 checksum)
@@ -1242,7 +1290,7 @@ static int16 Calc_stored_checksum(void)
 		Eeprom_read(eeprom_i2C_addr,x,EEPROM_PAGE_SIZE,buf);
 
 		for(n = 0; n < EEPROM_PAGE_SIZE; n++)
-			checksum += (int16)buf[n+1];
+			checksum += (int16)buf[n];
 	}
 	stored_sum = Get_stored_checksum();
 	checksum -= (stored_sum & 0x00ff);
@@ -1250,7 +1298,120 @@ static int16 Calc_stored_checksum(void)
 	checksum = ~checksum;
 	return checksum;
 }
+static int8 Get_stored_digit_string(int16 eeprom_pos, int16 size, int8*buf)
+{
+	int8 x;
+	
+	Eeprom_read(eeprom_i2C_addr,eeprom_pos,size,buf);
+	for(x = 0; x < size;x++)
+	{
+		if((buf[x] < 0x30) || (buf[x] > 0x39))
+			return FALSE;
+	}
+	buf[x] = '\0';	//terminate string
+	return TRUE;
+}
 
+static int8 Get_stored_alpha_string(int16 eeprom_pos, int16 size, int8*buf)
+{
+	int8 x;
+	
+	Eeprom_read(eeprom_i2C_addr,eeprom_pos,size,buf);
+	for(x = 0; x < size;x++)
+	{
+		if((buf[x] == '\0') && (x > 0))
+			return TRUE;
+		else if (!( ((buf[x] >= '0') && (buf[x] <= '9')) || ((buf[x] >= 'a') && (buf[x] <= 'z')) || ((buf[x] >= 'A') && (buf[x] <= 'Z')) || (buf[x] == '-') ))
+			return FALSE;
+	}
+	buf[x] = '\0';	//terminate string
+	return TRUE;
+}
+static void	Display_formatted_assy_info(void)
+{
+	int8 *ptr, *ptr1, tmp[EEPROM_ASSY_SN_STRING_LAYOUT_SIZE];
+	// Now display contents and checksum & status
+	//*******************************************
+	ASC_Asci_msg(ROM_Read_romstr(NEWLINE_MSG));	// newline
+	cur_stored_checksum = Get_stored_checksum();
+	sprintf((char *)tmpstr,"Stored Checksum     = %04x\n\r",cur_stored_checksum);
+	ASC_Asci_msg(tmpstr);
+
+	cur_calc_checksum = Calc_stored_checksum();
+	sprintf((char *)tmpstr,"Calculated Checksum = %04x\n\r",cur_calc_checksum);
+	ASC_Asci_msg(tmpstr);
+	ASC_Asci_msg(ROM_Read_romstr(NEWLINE_MSG));	// newline
+	
+	//Now display Product No.
+	while(!ASC_Asci_tx_empty());
+	ASC_Asci_msg(ROM_Read_romstr(PRODUCT_PN_MSG));	// display Product Code message
+	ptr = (int8 *)ROM_Read_romstr(INVALID_DATA_MSG);
+	if(Get_stored_digit_string(EEPROM_FINAL_PROD_NUM_LAYOUT_POS,EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE,tmpstr))
+	{
+		ptr1 = tmpstr + EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE;
+		*ptr1++ = '-';
+		if(Get_stored_digit_string(EEPROM_FINAL_PROD_CODE_LAYOUT_POS,EEPROM_FINAL_PROD_CODE_LAYOUT_SIZE,ptr1))
+		{
+			ptr1 += EEPROM_FINAL_PROD_CODE_LAYOUT_SIZE;
+			*ptr1++ = '-';
+			if(Get_stored_alpha_string(EEPROM_FINAL_PROD_REV_LAYOUT_POS,EEPROM_FINAL_PROD_REV_LAYOUT_SIZE,ptr1))
+			{
+				*(ptr1 + EEPROM_FINAL_PROD_REV_LAYOUT_SIZE) = '\0';
+				ptr = tmpstr;
+			}
+		}
+	}
+	ASC_Asci_msg(ptr);
+	ASC_Asci_msg(ROM_Read_romstr(NEWLINE_MSG));	// Newline
+	
+	//Now display Product S/N.
+	while(!ASC_Asci_tx_empty());
+	ASC_Asci_msg(ROM_Read_romstr(PRODUCT_SN_MSG));	// display Product SN message
+	ptr = (int8 *)ROM_Read_romstr(INVALID_DATA_MSG);
+	if(Get_stored_alpha_string(EEPROM_FINAL_PROD_SN_LAYOUT_POS,EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE,tmpstr))
+	{
+		ptr1 = tmpstr + EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE;
+		*ptr1++ = '-';
+		if(Get_stored_alpha_string(EEPROM_FINAL_PROD_CODE_LAYOUT_POS,EEPROM_FINAL_PROD_SN_LAYOUT_SIZE,ptr1))
+		{
+			*(ptr1 + EEPROM_FINAL_PROD_SN_LAYOUT_SIZE) = '\0';
+			ptr = tmpstr;
+		}
+	}
+	ASC_Asci_msg(ptr);
+	ASC_Asci_msg(ROM_Read_romstr(NEWLINE_MSG));	// newline
+
+	//Now display PCB Assy No.
+	while(!ASC_Asci_tx_empty());
+	ASC_Asci_msg(ROM_Read_romstr(PCB_ASSY_PN_MSG));	// display PCB assy PN message
+	ptr = (int8 *)ROM_Read_romstr(INVALID_DATA_MSG);
+	if(Get_stored_alpha_string(EEPROM_ASSY_NUM_STRING_LAYOUT_POS,EEPROM_ASSY_NUM_STRING_LAYOUT_SIZE,tmpstr))
+		ptr = tmpstr;
+		
+	ASC_Asci_msg(ptr);
+	ASC_Asci_msg(ROM_Read_romstr(NEWLINE_MSG));	// newline
+	
+	//Now display PCB Assy SN.
+	while(!ASC_Asci_tx_empty());
+	ASC_Asci_msg(ROM_Read_romstr(PCB_ASSY_SN_MSG));	// display PCB assy SN message
+	ptr = (int8 *)ROM_Read_romstr(INVALID_DATA_MSG);
+	if(Get_stored_alpha_string(EEPROM_ASSY_WO_STRING_LAYOUT_POS,EEPROM_ASSY_WO_STRING_LAYOUT_SIZE,tmpstr))
+	{
+		strcat(tmpstr,"-");
+	//	ptr = tmpstr;
+	//	ptr1 = tmpstr + EEPROM_ASSY_WO_STRING_LAYOUT_SIZE;
+		*ptr1++ = '-';
+		if(Get_stored_alpha_string(EEPROM_ASSY_SN_STRING_LAYOUT_POS,EEPROM_ASSY_SN_STRING_LAYOUT_SIZE,tmp))
+		{
+			strcat(tmpstr,tmp);
+			ptr = tmpstr;
+		}
+	}
+	ptr = tmpstr;
+	ASC_Asci_msg(ptr);
+	ASC_Asci_msg(ROM_Read_romstr(NEWLINE_MSG));	// newline
+
+}
 /*********************************************************************
 *                       End of menu.c                                *
 *********************************************************************/
