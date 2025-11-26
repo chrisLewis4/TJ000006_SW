@@ -97,7 +97,13 @@ Description	:
 
 void InitIO(void)
 {
-	DDRD |= BIT2; //Set Port C Bit 6 as Debug port
+	PORTD = TJ_ID_BIT; // Enable pull up for TJ ID Bit
+	// Define and set DEBUG pin at PORTD bit 2 (Pin 20)
+	DDRD |= DEBUG_BIT; // Ensure PORTD Bit 3 is set as Output
+	
+	//Define Test Jig ID Port and Bit (PORTD Bit 3 (Pin 21)
+	DDRD &= ~TJ_ID_BIT; // Ensure PORTD Bit 3 is set as input
+	
 	DEBUG_LO;
 	DEBUG_HI;
 	DEBUG_LO;
@@ -145,7 +151,35 @@ int8 MAI_Set_header_cntrl(IPOP_ENUM ipop_stat, HILO_ENUM hilo_stat)
 	}
 	return HEADER_PORT_RD & HEADER_CONFIG_BIT; // return but status
 }
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+JIG_ID_ENUM MAI_Get_jig_id(void)
+{
+	int8 x, id_bit,n;
 
+	// Read initial value of ID bit: 0 = FINAL;	1 = Board;
+	id_bit = PIND & TJ_ID_BIT;
+	
+	for(x = 0; x < 4; x++)
+	{
+		// set 10ms Delay
+		TIM_Delay(10);
+		while(!TIM_Get_delay_flag()); //Wait for delay to expire;
+		n = PIND & TJ_ID_BIT;
+		
+		if(id_bit != n)
+			return INVALID_JIGID;
+	}
+	// Pin is same value so return appropriate enum
+	if(id_bit)
+		return BD_TEST_JIGID;
+	else
+		return FINAL_TEST_JIGID;
+}
 /*********************************************************************
 *						End of main.c								 *
 *********************************************************************/

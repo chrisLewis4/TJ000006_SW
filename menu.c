@@ -47,7 +47,6 @@ static void Test_msg_func(void);
 static int8 Cmd_check(int8);
 
 //EEPROM specific functions
-static void Eeprom_addr_select_menu(void);
 static void Eeprom_debug_menu(void);
 static void Eeprom_write(int8 eeprom_addr,int16 byte_addr,int16 byte_count,int8 *buf);
 static int8 Eeprom_read(int8 eeprom_addr,int16 byte_addr,int16 byte_count,int8 *buf);
@@ -143,6 +142,11 @@ int8 const DOT_MSG[] PROGMEM =		{"."};
  int8 const OPENING_MENU_MSG[] PROGMEM = {"\n\n\rEEG Net Connector - I2C EEPROM Programmer\n\r"
                                           "=========================================\n\r"
 										  "Firmware ID: "};
+
+
+int8 const FINAL_TEST_NOT_IMPLEMENTED_MSG[] PROGMEM = {"\n\n\r*** FINAL TEST FIRMWARE NOT IMPLEMENTED ***\n\r"};
+int8 const INVALID_JIG_ID_MSG[] PROGMEM = {"\n\n\r*** INVALID TEST JIG ID DETECTED ***\n\r"};								  
+int8 const BD_TEST_JIG_MSG[] PROGMEM = {"Board Test Option Detected\n\n\r"};
  /* common menu messages */
  static int8 const CMD_NOT_IMPLEMENTED_MSG[] PROGMEM =	{" Command not implemented\n\r"};
  
@@ -235,7 +239,7 @@ int8 const NOT_ENOUGH_WO_NO_IP_CHARS_MSG[] PROGMEM =
 
 int8 const CHECK_HEADER_MSG[] PROGMEM =
 {
-	"\n\n\rCheck Header is fitted correctly\n\rPress 'x' to exit or any key to retry\n\r"
+	"\n\n\rCheck Header is fitted correctly\n\rPress 'x' to ENTER key to retry\n\r"
 };
 int8 const CHECKSUM_MISMATCH_MSG[] PROGMEM =
 {
@@ -295,19 +299,20 @@ int8 const NUMERIC_CHARS_ONLY_MSG[] PROGMEM =
 	"\n\n\r *** Please Re-Enter using numeric characters only ('0'-'9') ***\n\r"
 };
 
-int8 const DEBUG_MENU_MSG[] PROGMEM =
+/*int8 const DEBUG_MENU_MSG[] PROGMEM =
 {
 	"\n\n\n\n\r"
 	"DEBUG MENU\n\r"
 	"=============\n\r"
 	"E - EEPROM Debug\n\r"
 	"X - Exit to Start Menu\n\r"
-};
+};*/
 
 int8 const EEPROM_DEBUG_MSG[] PROGMEM =
 {
 	"\n\n\n\n\rEEPROM Debug"
 	"\n\r===========\n\n\r"
+	"D - Display Stored Details\n\r"
 	"H - Hex Dump\n\r"
 	"W - Write\n\r"
 	"R - Reset EEPROM to 00\n\r"
@@ -315,9 +320,12 @@ int8 const EEPROM_DEBUG_MSG[] PROGMEM =
 	"C - Display Checksums\n\r"
 	"X - Return to Debug Menu\n\n\r"
 };
-int8 const EEPROM_ADDR_SEL_MSG[] PROGMEM =
+int8 const DEBUG_MENU_MSG[] PROGMEM =
 {
-	"\n\n\n\n\rSelect EEPROM Address:\n\r"
+	"\n\n\n\n\r"
+	"DEBUG MENU\n\r"
+	"=============\n\r"
+	"\n\rSelect EEPROM Address:\n\r"
 	"1 - 0x50: Net Connector\n\r"
 	"2 - 0x52: ADC Bottom Bd\n\r"
 	"3 - 0x54: Net Extension\n\r"
@@ -362,17 +370,32 @@ Description :Initializes some of the test module variables just in case
 --------------------------------------------------------------------*/
 void MEN_Init(void)
 {
+	int bd_id;
+	
 	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
 	ASC_Asci_msg((int8 *const)ROM_Read_romstr(COPYRIGHT_MSG));		//display Copyright msg
 	ASC_Asci_msg((int8 *const)ROM_Read_romstr(OPENING_MENU_MSG));	//display Opening msg
 	ASC_Asci_msg((int8 *const)ROM_Read_romstr(VER_Get_sw_pn()));	//Display Firmware PN and Version
 	ASC_Asci_msg(ROM_Read_romstr(NEWLINE_MSG));
-	ASC_Asci_msg(ROM_Read_romstr(NEWLINE_MSG));
-
-	MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu); // Display start menu
+	
+	bd_id = MAI_Get_jig_id();
+	
+	if(bd_id == FINAL_TEST_JIGID)
+	{
+		ASC_Asci_msg((int8 *const)ROM_Read_romstr(FINAL_TEST_NOT_IMPLEMENTED_MSG));	//display not impemented
+		cmd_bk_func = NULL;
+	}
+	else if(bd_id == INVALID_JIGID)
+	{
+		ASC_Asci_msg((int8 *const)ROM_Read_romstr(INVALID_JIG_ID_MSG));	//display not valid
+		cmd_bk_func = NULL;
+	}
+	else
+	{
+		ASC_Asci_msg((int8 *const)ROM_Read_romstr(BD_TEST_JIG_MSG));	//display not Bd Test 
+		MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu); // Display start menu
+	}
 }
-
-
 /*====================================================================
 Name        :MEN_bkproc
 Parameters  :NONE
@@ -1030,42 +1053,7 @@ static int8 Wait_for_x_or_enter(void)
 
 //********************************************************************
 //********************************************************************
-/*====================================================================
-Name        :Debug_menu
-Parameters  :NONE
-Returns     :NONE
-Description :Set as the cmd_func when command menu is invoked
-             It gets any RX char and processes them according to their value
---------------------------------------------------------------------*/
-static void Debug_menu(void)
-{
-    int8 rx_byte;
 
-    /* get any RX chars */
-    rx_byte = Cmd_check(CMD_ECHO);
-    /* return if none available */
-    if(!rx_byte)
-        return;
- 
-	
-    /* now process RX char */
-    switch(rx_byte)
-    {
-		case 'E':
-		case 'e':
-			MAI_Set_power(ON);
-			MEN_Set_cmd_bk_func(EEPROM_ADDR_SEL_MSG,Eeprom_addr_select_menu);
-			break;
-		case 'x':
-		case 'X':
-			MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu);
-			break;
-	    default:
-			ASC_Asci_msg((int8 *const)ROM_Read_romstr(CMD_NOT_IMPLEMENTED_MSG));
-			MEN_Set_cmd_bk_func(DEBUG_MENU_MSG,Debug_menu);
-		    break;
-    }
-}
 
 
 /*====================================================================
@@ -1076,10 +1064,11 @@ Description	:
 --------------------------------------------------------------------*/
 
 
-static void Eeprom_addr_select_menu(void)
+static void Debug_menu(void)
 {
 	int8 rx_byte;
 	
+	MAI_Set_power(ON);
 	/* get rx char */
 	rx_byte = Cmd_check(CMD_ECHO);
 	/* check for valid rx char */
@@ -1102,13 +1091,13 @@ static void Eeprom_addr_select_menu(void)
 			break;
 		case 'x':
 		case 'X':
-			MEN_Set_cmd_bk_func(DEBUG_MENU_MSG,Debug_menu);
+			MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu);
 			MAI_Set_power(OFF);
 
 			return;	
 		default:
 			ASC_Asci_msg((int8 *const)ROM_Read_romstr(CMD_NOT_IMPLEMENTED_MSG));
-			MEN_Set_cmd_bk_func(EEPROM_ADDR_SEL_MSG,Eeprom_addr_select_menu);
+			MEN_Set_cmd_bk_func(DEBUG_MENU_MSG,Debug_menu);
 			return;
 	}
 		
@@ -1135,15 +1124,16 @@ static void Eeprom_debug_menu(void)
 	switch(rx_byte)
 	{
 
-/*		case 'P':
-		case 'p':
-		Eeprom_read()
+		case 'D':
+		case 'd':
+		Display_formatted_assy_info();
+/*		Eeprom_read()
 		ptr = SPI_Nvr_read(&buf[0],0,18);
 		ptr[EEPROM_PAGE_SIZE-1] = '\0';
 		sprintf((char *)tmpstr,"\n\r%s\n\r",ptr);
-		ASC_Asci_msg(tmpstr);
+		ASC_Asci_msg(tmpstr);*/
 		break;
-*/	
+	
 		//Check for Hex Dump CMD
 		case 'H':
 		case 'h':
@@ -1445,7 +1435,10 @@ static int8 Get_stored_digit_string(int16 eeprom_pos, int16 size, int8*buf)
 	for(x = 0; x < size;x++)
 	{
 		if(!Check_number_char(buf[x]))
+		{
+			buf[x] = '\0';	//terminate string
 			return FALSE;
+		}
 	}
 	buf[x] = '\0';	//terminate string
 	return TRUE;
@@ -1472,7 +1465,10 @@ static int8 Get_stored_alpha_string(int16 eeprom_pos, int16 size, int8*buf)
 		if((buf[x] == '\0') && (x > 0))
 			return TRUE;
 		else if (!Check_alpha_char(buf[x]))
+		{
+			buf[x] = '\0';	//terminate string
 			return FALSE;
+		}	
 	}
 	buf[x] = '\0';	//terminate string
 	return TRUE;
@@ -1567,7 +1563,7 @@ static void	Display_formatted_assy_info(void)
 			ptr = tmpstr;
 		}
 	}
-	ptr = tmpstr;
+//	ptr = tmpstr;
 	ASC_Asci_msg(ptr);
 	ASC_Asci_msg(ROM_Read_romstr(NEWLINE_MSG));	// newline
 
