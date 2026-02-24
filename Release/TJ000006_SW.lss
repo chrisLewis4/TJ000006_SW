@@ -343,7 +343,7 @@ Disassembly of section .text:
 
 00000b78 <FW_PN>:
      b78:	54 4a 30 30 30 30 30 36 5f 53 57 20 2d 20 56 65     TJ000006_SW - Ve
-     b88:	72 20 50 31 2e 31 00 00                             r P1.1..
+     b88:	72 20 50 31 2e 32 00 00                             r P1.2..
 
 00000b90 <__ctors_end>:
      b90:	11 24       	eor	r1, r1
