@@ -32,6 +32,9 @@
 // main menus
 static void Debug_menu(void);
 static void Start_menu(void);
+static void Select_bd_menu(void);
+static void Fstart_menu(void);
+			
 //data entry funcs
 static void Get_wo_no(void);
 static void Get_assy_no(void);
@@ -63,7 +66,9 @@ static int8 Check_alpha_char(int8 c);
 static int8 Check_number_char(int8 c);
 static int8 Wait_for_x_or_enter(void);
 
-
+// Port Expander (PE) specific funcs
+static void Init_pe_debug_menu(void);
+static void Port_expander_debug_menu(void);
 
 
 
@@ -104,6 +109,12 @@ static int8 Wait_for_x_or_enter(void);
 #define EEPROM_BYTE_COUNT 512
 #define EEPROM_PAGE_SIZE 16
 
+// Define valid adresses
+#define NET_CONN_I2C_ADDR		0x50
+#define NET_EXTEND_I2C_ADDR		0x54
+#define ADC_BOT_I2C_ADDR		0x52
+#define ADC_TOP_I2C_ADDR		0x56
+#define PORT_EXPAND_I2C_ADDR	0x41
 
 // define storage layout positions from TD6500006 Net Spec
 #define EEPROM_FINAL_PROD_NUM_LAYOUT_POS	0x00	//
@@ -139,20 +150,39 @@ int8 const DOT_MSG[] PROGMEM =		{"."};
  // Opening Menu Msgs
  int8 const COPYRIGHT_MSG[]  PROGMEM =	{"\n\n\n\n\n\n\n\n\n\n\n\r(c) Copyright The Magstim Company Ltd. 2025\n\n\r"};
  
- int8 const OPENING_MENU_MSG[] PROGMEM = {"\n\n\rEEG Net Connector - I2C EEPROM Programmer\n\r"
-                                          "=========================================\n\r"
+ int8 const OPENING_MENU_MSG[] PROGMEM = {"\n\n\rEEG Net Connector - I2C Test Firmware\n\r"
+                                                "=====================================\n\r"
 										  "Firmware ID: "};
 
 
-int8 const FINAL_TEST_NOT_IMPLEMENTED_MSG[] PROGMEM = {"\n\n\r*** FINAL TEST FIRMWARE NOT IMPLEMENTED ***\n\r"};
+int8 const FINAL_TEST_JIG_MSG[] PROGMEM = {"\n\nFinal Test Firmware\n\r"
+											   "*******************\n\n\r"};
 int8 const INVALID_JIG_ID_MSG[] PROGMEM = {"\n\n\r*** INVALID TEST JIG ID DETECTED ***\n\r"};								  
-int8 const BD_TEST_JIG_MSG[] PROGMEM = {"Board Test Option Detected\n\n\r"};
+int8 const BD_TEST_JIG_MSG[] PROGMEM = {"\n\nBoard Test Firmware\n\r"
+										    "**********************\n\n\r"};
  /* common menu messages */
  static int8 const CMD_NOT_IMPLEMENTED_MSG[] PROGMEM =	{" Command not implemented\n\r"};
  
+// define Net Type Msgs
+int8 const NET_CONN_PCB_MSG[] PROGMEM = {"Net Connector PCB"};
+int8 const NET_ADAPT_PCB_MSG[] PROGMEM = {"Net Adapter PCB"};
+	
+int8 const NET_ASSY_MSG[] PROGMEM = {"Net Final Assembly"};
+int8 const NET_ADAPT_ASSY_MSG[] PROGMEM = {"Net Adapter Final Assembly"};
+int8 const NET_EXTEND_ASSY_MSG[] PROGMEM = {"Net Extension Final Assembly"};
 
 /* declare Terminal Menus text*/
 //*********************  Start Menu  ***************************
+int8 const FSTART_MENU_MSG[] PROGMEM =
+{
+	"\n\n\r"
+	"Select Final Assy Type\n\r"
+	"======================\n\r"
+	"N - Net\n\r"
+	"L - Legacy Net Adaptor\n\r"
+	"E - Net Extension Cable\n\r"
+	"<ENTER>- To refresh screen\n\n\r"
+};
 int8 const START_MENU_MSG[] PROGMEM =
 {
 	"\n\n\r"
@@ -162,6 +192,29 @@ int8 const START_MENU_MSG[] PROGMEM =
 	"D - Debug Menu\n\r"
 	"<ENTER>- To refresh screen\n\n\r"
 };
+
+int8 const SELECT_BD_MSG[] PROGMEM =
+{
+	"\n\n\r"
+	"Select Board Under Test (BUT)\n\r"
+	"=============================\n\r"
+	"1 - 6519-01 - Net Connector PCB\n\r"
+	"2 - 6768-01 - Net Adapter PCB\n\r"
+	"X - Exit to Start Menu\n\r"
+	"<ENTER>- To refresh screen\n\n\r"
+};
+
+int8 const NET_CONN_SELECTED_MSG[] PROGMEM =
+{
+	"\n\n\n\r"
+	"6519-01 Net Connector PCB selected\n\r"
+};
+int8 const NET_ADAPT_SELECTED_MSG[] PROGMEM =
+{
+	"\n\n\n\r"
+	"6768-01 Net Adapter PCB selected\n\r"
+};
+
 int8 const ENTER_WO_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
@@ -330,9 +383,18 @@ int8 const DEBUG_MENU_MSG[] PROGMEM =
 	"2 - 0x52: ADC Bottom Bd\n\r"
 	"3 - 0x54: Net Extension\n\r"
 	"4 - 0x56: ADC Top Bd\n\r"
+	"5 - 0x41: Port Expander (HW000112 Only)\n\r"	
 	"\n\rPress X to exit\n\n\r"
 };
 
+int8 const PORT_EXPANDER_DEBUG_MSG[] PROGMEM =
+{
+	"\n\n\n\n\r"
+	"Port Expander Debug\n\r"
+	"===================\n\r"
+	"Press 'X' to Exit\n\n\r"
+	"GSN3 GSN2 GSN1 GSN0\n\r"
+};
 
 /*==================================================================*/
 /*      LOCAL INITIALISED VARIABLES (initialised to 0 by default)   */
@@ -354,9 +416,12 @@ static int8 assy_rev_str[BD_ASSY_REV_STRING_LEN+1];
 static int8 serial_no_str[BD_SN_STRING_LEN+1];
 static int8 formatted_assy_no_string[EEPROM_ASSY_NUM_STRING_LAYOUT_SIZE];
 // define EEPROM address storage
-static int8 eeprom_i2C_addr;
+static int8 cur_i2C_addr;
 static int16 cur_calc_checksum;
 static int16 cur_stored_checksum;
+
+//define PCB type flag
+static int8 adapter_flag;
 
 /*********************************************************************
 *                               FUNCTIONS                            *
@@ -382,8 +447,8 @@ void MEN_Init(void)
 	
 	if(bd_id == FINAL_TEST_JIGID)
 	{
-		ASC_Asci_msg((int8 *const)ROM_Read_romstr(FINAL_TEST_NOT_IMPLEMENTED_MSG));	//display not impemented
-		cmd_bk_func = NULL;
+		ASC_Asci_msg((int8 *const)ROM_Read_romstr(FINAL_TEST_JIG_MSG));	//display not Bd Test
+		MEN_Set_cmd_bk_func(FSTART_MENU_MSG,Fstart_menu); // Display Final test start menu
 	}
 	else if(bd_id == INVALID_JIGID)
 	{
@@ -539,7 +604,7 @@ static void Start_menu(void)
 		case 't':
 			user_ip_buf_ix = 0;	//reset user input buf index
 			user_ip_max_chars = MAX_WO_STRING_LEN;
-			MEN_Set_cmd_bk_func(ENTER_WO_MSG,Get_wo_no);
+			MEN_Set_cmd_bk_func(SELECT_BD_MSG,Select_bd_menu);
 			ASC_Asci_msg((int8 *const)ROM_Read_romstr(NEWPAGE_MSG));
 			break;
 		case 'D':
@@ -552,6 +617,50 @@ static void Start_menu(void)
 			MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu);
 		break;
 	}
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+static void Select_bd_menu(void)
+{
+	int8 rx_byte, *msg = NULL;
+
+	/* get any RX chars */
+	rx_byte = Cmd_check(CMD_ECHO);
+	/* return if none available */
+	if(!rx_byte)
+	return;
+
+	/* now process RX char */
+	switch(rx_byte)
+	{
+		case '1':
+			strcpy((char *)assy_no_str,"6519");
+			adapter_flag = FALSE;
+			msg = ROM_Read_romstr(NET_CONN_SELECTED_MSG);
+			break;
+		case '2':
+			strcpy((char *)assy_no_str,"6768");
+			adapter_flag = TRUE;
+			msg = ROM_Read_romstr(NET_ADAPT_SELECTED_MSG);
+			break;
+		case 'x':
+		case 'X':
+			MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu);
+			return;
+		default:
+			ASC_Asci_msg((int8 *const)ROM_Read_romstr(CMD_NOT_IMPLEMENTED_MSG));
+			MEN_Set_cmd_bk_func(SELECT_BD_MSG,Select_bd_menu);
+			return;
+	}
+	ASC_Asci_msg((int8 *const)ROM_Read_romstr(NEWPAGE_MSG));
+	ASC_Asci_msg(msg);
+	user_ip_buf_ix = 0;	//reset user input buf index
+	user_ip_max_chars = MAX_WO_STRING_LEN;
+	MEN_Set_cmd_bk_func(ENTER_WO_MSG,Get_wo_no);
 }
 
 /*====================================================================
@@ -594,9 +703,9 @@ static void Get_wo_no(void)
 			// pad out WO string with 0's
 			for( ; user_ip_buf_ix < MAX_WO_STRING_LEN; user_ip_buf_ix++)
 				wo_no_str[user_ip_buf_ix] = '\0';
-			user_ip_buf_ix = 0;							//reset user input buf index
-			user_ip_max_chars = BD_ASSY_STRING_LEN; // Set max chars for assy
-			MEN_Set_cmd_bk_func(ENTER_ASSY_NO_MSG,Get_assy_no);
+			user_ip_buf_ix = 0;	//reset user input buf index
+			user_ip_max_chars = BD_ASSY_REV_STRING_LEN;
+			MEN_Set_cmd_bk_func(ENTER_ASSY_REV_MSG,Get_assy_rev_no);
 			break;
 		default:
 			if(Check_alpha_char(rx_byte))
@@ -608,9 +717,9 @@ static void Get_wo_no(void)
 					strcpy((char *)wo_no_str,(char *)user_ip_buf);	// copy string
 					for( ; user_ip_buf_ix < MAX_WO_STRING_LEN; user_ip_buf_ix++)
 						wo_no_str[user_ip_buf_ix] = '\0';
-					user_ip_buf_ix = 0;							//reset user input buf index
-					user_ip_max_chars = BD_ASSY_STRING_LEN; // Set max chars for assy
-					MEN_Set_cmd_bk_func(ENTER_ASSY_NO_MSG,Get_assy_no);
+					user_ip_buf_ix = 0;	//reset user input buf index
+					user_ip_max_chars = BD_ASSY_REV_STRING_LEN;
+					MEN_Set_cmd_bk_func(ENTER_ASSY_REV_MSG,Get_assy_rev_no);
 				}
 			}
 			else
@@ -758,12 +867,18 @@ Description	:
 --------------------------------------------------------------------*/
 static void Display_assy_details(void)
 {
+	char *msg;
 	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
 	ASC_Asci_msg(ROM_Read_romstr(CHECK_DETAILS_MSG));
 	MEN_Set_cmd_bk_func(PRESS_X_OR_PROCEED_MSG,Bd_test_start_menu);
-	sprintf((char *)tmpstr,"WO No   = %s\n\rAssy No = %s-01-%s\n\n\r",wo_no_str,assy_no_str,assy_rev_str);
+	sprintf((char *)tmpstr,"WO No   = %s\n\rAssy No = %s-01-%s  ",wo_no_str,assy_no_str,assy_rev_str);
 	ASC_Asci_msg(tmpstr);
-
+	if(adapter_flag)
+		msg = ROM_Read_romstr(NET_ADAPT_PCB_MSG);
+	else
+		msg = ROM_Read_romstr(NET_CONN_PCB_MSG);
+	sprintf((char *)tmpstr,"%s\n\n\r",msg);
+	ASC_Asci_msg(tmpstr);
 }
 /*====================================================================
 Name		:
@@ -912,7 +1027,7 @@ static void Start_eeprom_prog(void)
 	// Turn Power on
 	MAI_Set_power(ON);
 	// Add delay to allow voltages to settle
-	TIM_Delay(1000);	
+	TIM_Set_delay(1000);	
 	while(!TIM_Get_delay_flag());
 	
 	// Do Header Check
@@ -935,7 +1050,7 @@ static void Start_eeprom_prog(void)
 	// Header is ok so set config as output low
 	//****************************************
 	MAI_Set_header_cntrl(OP,LO);
-	eeprom_i2C_addr = EEPROM_ADDR_LO;
+	cur_i2C_addr = EEPROM_ADDR_LO;
 
 	cur_calc_checksum = Calc_stored_checksum();
 	cur_stored_checksum = Get_stored_checksum();
@@ -970,11 +1085,11 @@ static void Start_eeprom_prog(void)
 	Eeprom_fill(EEPROM_RESET_CHAR); // Reset all data
 
 	sprintf((char *)formatted_assy_no_string,"%s-01-%s",assy_no_str, assy_rev_str);
-	Eeprom_write(eeprom_i2C_addr, EEPROM_ASSY_NUM_STRING_LAYOUT_POS,EEPROM_ASSY_NUM_STRING_LAYOUT_SIZE,formatted_assy_no_string ); // Store PCB assy number, code and rev
+	Eeprom_write(cur_i2C_addr, EEPROM_ASSY_NUM_STRING_LAYOUT_POS,EEPROM_ASSY_NUM_STRING_LAYOUT_SIZE,formatted_assy_no_string ); // Store PCB assy number, code and rev
 //	Eeprom_hex_dump();
-	Eeprom_write(eeprom_i2C_addr, EEPROM_ASSY_WO_STRING_LAYOUT_POS,EEPROM_ASSY_WO_STRING_LAYOUT_SIZE,wo_no_str ); // Store PCB assy number, code and rev
+	Eeprom_write(cur_i2C_addr, EEPROM_ASSY_WO_STRING_LAYOUT_POS,EEPROM_ASSY_WO_STRING_LAYOUT_SIZE,wo_no_str ); // Store PCB assy number, code and rev
 //	Eeprom_hex_dump();
-	Eeprom_write(eeprom_i2C_addr, EEPROM_ASSY_SN_STRING_LAYOUT_POS,EEPROM_ASSY_SN_STRING_LAYOUT_SIZE,serial_no_str ); // Store PCB assy number, code and rev
+	Eeprom_write(cur_i2C_addr, EEPROM_ASSY_SN_STRING_LAYOUT_POS,EEPROM_ASSY_SN_STRING_LAYOUT_SIZE,serial_no_str ); // Store PCB assy number, code and rev
 
 	cur_calc_checksum = Calc_stored_checksum();
 	Store_checksum(cur_calc_checksum);
@@ -982,13 +1097,13 @@ static void Start_eeprom_prog(void)
 	// Now turn Power off for 3 secs
 	ASC_Asci_msg(ROM_Read_romstr(CHECKING_DATA_RETENTION_MSG));
 	MAI_Set_power(OFF);
-	TIM_Delay(3000);
+	TIM_Set_delay(3000);
 	while(!TIM_Get_delay_flag());
 	MAI_Set_power(ON);
 
 	//Set upper address and check data
 	MAI_Set_header_cntrl(OP,HI);
-	eeprom_i2C_addr = EEPROM_ADDR_HI;
+	cur_i2C_addr = EEPROM_ADDR_HI;
 	if(Verify_stored_data())
 	{
 		ASC_Asci_msg(ROM_Read_romstr(DATA_RETENTION_OK_MSG));
@@ -1062,7 +1177,7 @@ Parameters	:
 Returns		:
 Description	:
 --------------------------------------------------------------------*/
-
+#define SET_PE_ALL_IP_CMD 0x00
 
 static void Debug_menu(void)
 {
@@ -1078,17 +1193,20 @@ static void Debug_menu(void)
 	switch(rx_byte)
 	{
 		case '1':
-			eeprom_i2C_addr = 0x50;
+			cur_i2C_addr = NET_CONN_I2C_ADDR;
 			break;
 		case '2':
-			eeprom_i2C_addr = 0x52;
+			cur_i2C_addr = ADC_BOT_I2C_ADDR;
 			break;
 		case '3':
-			eeprom_i2C_addr = 0x54;
+			cur_i2C_addr = NET_EXTEND_I2C_ADDR;
 			break;
 		case '4':
-			eeprom_i2C_addr = 0x56;
+			cur_i2C_addr = ADC_BOT_I2C_ADDR;
 			break;
+		case '5':
+			Init_pe_debug_menu();
+			return;
 		case 'x':
 		case 'X':
 			MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu);
@@ -1155,12 +1273,12 @@ static void Eeprom_debug_menu(void)
 		//	buf[0] = (int8)(BYTE_WRITE_ADDR_LO & 0xff);
 			buf[0] = WRITE_CHAR_LOW;
 
-			Eeprom_write(eeprom_i2C_addr,BYTE_WRITE_ADDR_LO,1,buf);		
+			Eeprom_write(cur_i2C_addr,BYTE_WRITE_ADDR_LO,1,buf);		
 			while(!ASC_Asci_tx_empty());
 			sprintf((char *)tmpstr,"\n\rData %02x written to address %04x\n\r",(int16)buf[0],(int16)BYTE_WRITE_ADDR_LO);
 			ASC_Asci_msg(tmpstr);
 
-			Eeprom_read(eeprom_i2C_addr,BYTE_WRITE_ADDR_LO,1,buf);	//read 1 byte of data from EEPROM
+			Eeprom_read(cur_i2C_addr,BYTE_WRITE_ADDR_LO,1,buf);	//read 1 byte of data from EEPROM
 
 			while(!ASC_Asci_tx_empty());
 			sprintf((char *)tmpstr,"\n\rData %02x read from address %04x\n\r",(int16)buf[0],(int16)BYTE_WRITE_ADDR_LO);
@@ -1170,12 +1288,12 @@ static void Eeprom_debug_menu(void)
 	//		buf[0] = (int8)(BYTE_WRITE_ADDR_HI & 0xff);
 			buf[0] = WRITE_CHAR_HIGH;
 
-			Eeprom_write(eeprom_i2C_addr,BYTE_WRITE_ADDR_HI,1,buf);
+			Eeprom_write(cur_i2C_addr,BYTE_WRITE_ADDR_HI,1,buf);
 			while(!ASC_Asci_tx_empty());
 			sprintf((char *)tmpstr,"\n\rData %02x written to address %04x\n\r",(int16)buf[0],(int16)BYTE_WRITE_ADDR_HI);
 			ASC_Asci_msg(tmpstr);
 
-			Eeprom_read(eeprom_i2C_addr,BYTE_WRITE_ADDR_HI,1,buf);	//read 1 byte of data from EEPROM
+			Eeprom_read(cur_i2C_addr,BYTE_WRITE_ADDR_HI,1,buf);	//read 1 byte of data from EEPROM
 
 			while(!ASC_Asci_tx_empty());
 			sprintf((char *)tmpstr,"\n\rData %02x read from address %04x\n\r",(int16)buf[0],(int16)BYTE_WRITE_ADDR_HI);
@@ -1189,6 +1307,11 @@ static void Eeprom_debug_menu(void)
 			break;
 		case 'R':
 		case 'r':
+			Eeprom_fill(EEPROM_RESET_CHAR);
+			break;
+
+		case 'P':
+		case 'p':
 			Eeprom_fill(EEPROM_RESET_CHAR);
 			break;
 			
@@ -1305,10 +1428,10 @@ static void Eeprom_fill(int8 set_char)
 		ASC_Asci_msg(tmpstr);
 				
 		// Write char to EEPROM
-		Eeprom_write(eeprom_i2C_addr,x,1,&buf);
+		Eeprom_write(cur_i2C_addr,x,1,&buf);
 				
 		// Now check data has been set
-		Eeprom_read(eeprom_i2C_addr,x,1,&buf);	//read 1 byte of data from EEPROM
+		Eeprom_read(cur_i2C_addr,x,1,&buf);	//read 1 byte of data from EEPROM
 
 		if(buf != set_char)
 		{
@@ -1342,7 +1465,7 @@ static void Eeprom_hex_dump(void)
 		sprintf((char *)tmpstr,"Addr = %04x: ",x);
 		ASC_Asci_msg(tmpstr);
 				
-		Eeprom_read(eeprom_i2C_addr,x,EEPROM_PAGE_SIZE,buf);
+		Eeprom_read(cur_i2C_addr,x,EEPROM_PAGE_SIZE,buf);
 
 		for(n = 0; n < EEPROM_PAGE_SIZE; n++)
 		{
@@ -1364,12 +1487,12 @@ static int16 Get_stored_checksum(void)
 	int8  buf[EEPROM_CHECKSUM_LAYOUT_SIZE+1];
 	int16 checksum;
 	
-	Eeprom_read(eeprom_i2C_addr, EEPROM_CHECKSUM_LAYOUT_POS,EEPROM_CHECKSUM_LAYOUT_SIZE, buf);
+	Eeprom_read(cur_i2C_addr, EEPROM_CHECKSUM_LAYOUT_POS,EEPROM_CHECKSUM_LAYOUT_SIZE, buf);
 
 	checksum = ((int16)buf[0] << 8) & 0xff00;
 	checksum |= (int16)buf[1] & 0x00ff;
 
-//	sprintf((char *)tmpstr,"\n\rAddr = %04x:\n\rPos = %04x\n\rData size = %04x\n\rData = %02x,%02x\n\rChecksum = %04x\n\n\r",eeprom_i2C_addr,EEPROM_CHECKSUM_LAYOUT_POS,EEPROM_CHECKSUM_LAYOUT_SIZE,(int16)ptr[0],(int16)ptr[1],checksum);
+//	sprintf((char *)tmpstr,"\n\rAddr = %04x:\n\rPos = %04x\n\rData size = %04x\n\rData = %02x,%02x\n\rChecksum = %04x\n\n\r",cur_i2C_addr,EEPROM_CHECKSUM_LAYOUT_POS,EEPROM_CHECKSUM_LAYOUT_SIZE,(int16)ptr[0],(int16)ptr[1],checksum);
 //	ASC_Asci_msg(tmpstr);
 
 
@@ -1390,7 +1513,7 @@ static void Store_checksum(int16 checksum)
 	
 //	sprintf(tmpstr,"\n\r** Storing %04x, %02x, %02x **\n\r", checksum, (int16)buf[0], (int16)buf[1]);
 //	ASC_Asci_msg(tmpstr);
-	Eeprom_write(eeprom_i2C_addr, EEPROM_CHECKSUM_LAYOUT_POS,EEPROM_CHECKSUM_LAYOUT_SIZE, buf);
+	Eeprom_write(cur_i2C_addr, EEPROM_CHECKSUM_LAYOUT_POS,EEPROM_CHECKSUM_LAYOUT_SIZE, buf);
 }
 /*====================================================================
 Name		:
@@ -1409,7 +1532,7 @@ static int16 Calc_stored_checksum(void)
 	// add all bytes in eeprom to sum
 	for(x = 0;x < EEPROM_BYTE_COUNT;x += EEPROM_PAGE_SIZE)
 	{
-		Eeprom_read(eeprom_i2C_addr,x,EEPROM_PAGE_SIZE,buf);
+		Eeprom_read(cur_i2C_addr,x,EEPROM_PAGE_SIZE,buf);
 
 		for(n = 0; n < EEPROM_PAGE_SIZE; n++)
 			checksum += (int16)buf[n];
@@ -1430,7 +1553,7 @@ static int8 Get_stored_digit_string(int16 eeprom_pos, int16 size, int8*buf)
 {
 	int8 x;
 	
-	if(!Eeprom_read(eeprom_i2C_addr,eeprom_pos,size,buf))
+	if(!Eeprom_read(cur_i2C_addr,eeprom_pos,size,buf))
 		return FALSE;
 	for(x = 0; x < size;x++)
 	{
@@ -1458,7 +1581,7 @@ static int8 Get_stored_alpha_string(int16 eeprom_pos, int16 size, int8*buf)
 {
 	int8 x;
 	
-	Eeprom_read(eeprom_i2C_addr,eeprom_pos,size,buf);
+	Eeprom_read(cur_i2C_addr,eeprom_pos,size,buf);
 	for(x = 0; x < size;x++)
 	{
 		
@@ -1600,6 +1723,107 @@ static int8 Verify_stored_data(void)
 		}
 	}
 	return FALSE;
+}
+
+static void Init_pe_debug_menu(void)
+{
+	int8 cur_pe_cmd = SET_PE_ALL_IP_CMD;
+	
+	cur_i2C_addr = PORT_EXPAND_I2C_ADDR;
+	I2C_Write(cur_i2C_addr,1,&cur_pe_cmd);
+	MEN_Set_cmd_bk_func(PORT_EXPANDER_DEBUG_MSG,Port_expander_debug_menu);
+	TIM_Set_delay(200);
+}
+
+#define PE_CODE_COUNT 10
+
+static int8 pe_code = 0;
+static int8 pe_count = 0;
+static int8 pe_codes[PE_CODE_COUNT] = {0x00,0x01,0x02,0x04,0x08,0x0f,0x0e,0x0d,0x0b,0x07};
+
+static void Port_expander_debug_menu(void)
+{
+	int8 rx_byte, pe_data;
+	
+	/* get rx char */
+	rx_byte = Cmd_check(CMD_ECHO);
+	/* check for valid rx char */
+	if(rx_byte)
+	{
+		// process rx char 
+		switch(rx_byte)
+		{
+			case 'X':
+			case 'x':
+				MEN_Set_cmd_bk_func(DEBUG_MENU_MSG,Debug_menu);
+				return;
+			default:
+				break;
+		}
+		
+	}
+	if(TIM_Get_delay_flag())
+	{
+		pe_code = pe_codes[pe_count];
+		MAI_Set_port_expander_code((pe_code & 0x0f));
+		TIM_Set_delay(3000);
+		I2C_Read(cur_i2C_addr,1,&pe_data);
+		pe_data = pe_code; // Test Code
+		sprintf((char *)tmpstr," %01x    %01x    %01x    %01x     - Data Read = %01x%01x%01x%01x\r",((pe_code >> 3) & 0x01),((pe_code >> 2) & 0x01),((pe_code >> 1) & 0x01),(pe_code & 0x01),((pe_data>>3) & 0x01), ((pe_data>>2) & 0x01), ((pe_data>>1) & 0x01), (pe_data & 0x01));
+		ASC_Asci_msg(tmpstr);
+		if(++pe_count >= PE_CODE_COUNT)
+			pe_count = 0;
+	}
+}
+/*====================================================================
+	FINAL TEST Funcs
+====================================================================*/
+
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+static void Fstart_menu(void)
+{
+	int8 rx_byte,*msg = NULL;
+
+	/* get any RX chars */
+	rx_byte = Cmd_check(CMD_ECHO);
+	/* return if none available */
+	if(!rx_byte)
+	return;
+
+	/* now process RX char */
+	switch(rx_byte)
+	{
+		case 'N':
+		case 'n':
+			cur_i2C_addr = NET_CONN_I2C_ADDR;
+			adapter_flag = FALSE;
+			msg = ROM_Read_romstr(NET_ASSY_MSG);
+			break;
+		case 'L':
+		case 'l':
+			cur_i2C_addr = NET_CONN_I2C_ADDR;
+			adapter_flag = TRUE;
+			msg = ROM_Read_romstr(NET_ADAPT_ASSY_MSG);
+			break;
+		case 'E':
+		case 'e':
+			cur_i2C_addr = NET_EXTEND_I2C_ADDR;
+			adapter_flag = FALSE;
+			msg = ROM_Read_romstr(NET_EXTEND_ASSY_MSG);
+			break;
+		default:
+			ASC_Asci_msg((int8 *const)ROM_Read_romstr(CMD_NOT_IMPLEMENTED_MSG));
+			MEN_Set_cmd_bk_func(FSTART_MENU_MSG,Fstart_menu);
+			return;
+	}
+	sprintf(tmpstr,"\n\n\r%s Selected\n\n\r",msg);
+	ASC_Asci_msg(tmpstr);
+	MEN_Set_cmd_bk_func(FSTART_MENU_MSG,Fstart_menu);
 }
 /*********************************************************************
 *                       End of menu.c                                *

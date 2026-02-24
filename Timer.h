@@ -27,7 +27,9 @@
 /*======================================================================*/
 extern void TIM_Init_timer(void);
 extern int8 TIM_Get_delay_flag(void);
-extern void TIM_Delay(int16 millisecs);
+extern void TIM_Set_delay(int16 millisecs);
+extern void TIM_Wait(int16 millisecs);
+
 
 
 

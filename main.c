@@ -99,7 +99,7 @@ void InitIO(void)
 {
 	PORTD = TJ_ID_BIT; // Enable pull up for TJ ID Bit
 	// Define and set DEBUG pin at PORTD bit 2 (Pin 20)
-	DDRD |= DEBUG_BIT; // Ensure PORTD Bit 3 is set as Output
+	DDRD |= (DEBUG_BIT|PORT_EXPANDER_GSN3_BIT|PORT_EXPANDER_GSN2_BIT|PORT_EXPANDER_GSN2_BIT|PORT_EXPANDER_GSN0_BIT); // Ensure PORTD Bit 3 is set as Output
 	
 	//Define Test Jig ID Port and Bit (PORTD Bit 3 (Pin 21)
 	DDRD &= ~TJ_ID_BIT; // Ensure PORTD Bit 3 is set as input
@@ -111,6 +111,7 @@ void InitIO(void)
 	DEBUG_LO; 
 	DEBUG_HI;
 	DEBUG_LO;
+	
 	
 	// set power control port as output
 	DDRB |= POWER_CNTRL_BIT;
@@ -167,7 +168,7 @@ JIG_ID_ENUM MAI_Get_jig_id(void)
 	for(x = 0; x < 4; x++)
 	{
 		// set 10ms Delay
-		TIM_Delay(10);
+		TIM_Set_delay(10);
 		while(!TIM_Get_delay_flag()); //Wait for delay to expire;
 		n = PIND & TJ_ID_BIT;
 		
@@ -179,6 +180,24 @@ JIG_ID_ENUM MAI_Get_jig_id(void)
 		return BD_TEST_JIGID;
 	else
 		return FINAL_TEST_JIGID;
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+void MAI_Set_port_expander_code(int8 code)
+{
+/*
+	int8 tmp;
+	tmp = PORT_EXPANDER_GSN_PORT;
+	tmp = tmp & 0x0f;
+	tmp = tmp | ((code << 4) & 0xf0);
+	PORT_EXPANDER_GSN_PORT = tmp; 
+*/
+	PORT_EXPANDER_GSN_PORT = (PORT_EXPANDER_GSN_PORT & 0x0f) | ((code << 4) & 0xf0);
+
 }
 /*********************************************************************
 *						End of main.c								 *

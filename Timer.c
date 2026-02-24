@@ -69,7 +69,7 @@ Parameters	:
 Returns		:
 Description	:
 --------------------------------------------------------------------*/
-void TIM_Delay(int16 millisecs)
+void TIM_Set_delay(int16 millisecs)
 {
 	set_delay = millisecs;
 	delay_cnt = 0;
@@ -95,6 +95,17 @@ int8 TIM_Get_delay_flag(void)
 		return TRUE;
 	}
 	return FALSE;
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+void TIM_Wait(int16 millisecs)
+{
+	TIM_Set_delay(millisecs);
+	while(!TIM_Get_delay_flag());
 }
 /*====================================================================
 Name		:
