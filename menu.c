@@ -71,6 +71,8 @@ static void Prog_debug_details(void);
 // Port Expander (PE) specific funcs
 static void Init_pe_debug_menu(void);
 static void Port_expander_debug_menu(void);
+static int8 Port_expander_test(void);
+
 
 
 
@@ -274,10 +276,19 @@ int8 const PROG_EEPROM_MSG[] PROGMEM =
 
 int8 const PROG_SUCCESS_MSG[] PROGMEM =
 {
-	"\n\rSUCCESSFULLY Checked and Programmed EEPROM!!\n\n\r"
-	"Remove Board and apply TESTED MARK\n\n\r"
+	"\n\rSuccessfully Checked and Programmed EEPROM!!\n\r"
 };
 
+int8 const PORT_EXPANDER_TSET_FAILED_MSG[] PROGMEM =
+{
+	"\n\r!!! PORT EXPANDER TEST FAILED ***\n\n\r"
+};
+
+int8 const BD_TEST_SUCCESS_MSG[] PROGMEM =
+{
+	"\n\r*** TEST PASSED ***\n\r"
+	"Remove Board and apply TESTED MARK\n\n\r"
+};
 int8 const MAX_USER_IP_LEN_EXEEDED_MSG[] PROGMEM =
 {
 	"\n\n\rToo many characters entered - Please retry\n\r"	
@@ -407,7 +418,13 @@ int8 const PORT_EXPANDER_DEBUG_MSG[] PROGMEM =
 	"Press 'X' to Exit\n\n\r"
 	"GSN3 GSN2 GSN1 GSN0\n\r"
 };
-
+int8 const PORT_EXPANDER_TEST_MSG[] PROGMEM =
+{
+	"\n\rPort Expander Test\n\r"
+	"==================\n\r"
+	"Bit3 = GSN3, Bit2 = GSN2, Bit1 = GSN1, Bit0 = GSN0\n\n\r"
+	"OUT    IN\n\r"
+};
 /*==================================================================*/
 /*      LOCAL INITIALISED VARIABLES (initialised to 0 by default)   */
 /*==================================================================*/
@@ -1049,16 +1066,7 @@ static void Start_eeprom_prog(void)
 	Eeprom_fill(EEPROM_RESET_CHAR); // Reset all data
 
 	Prog_debug_details();
-/*	sprintf((char *)formatted_assy_no_string,"%s-01-%s",assy_no_str, assy_rev_str);
-	Eeprom_write(cur_i2C_addr, EEPROM_ASSY_NUM_STRING_LAYOUT_POS,EEPROM_ASSY_NUM_STRING_LAYOUT_SIZE,formatted_assy_no_string ); // Store PCB assy number, code and rev
-//	Eeprom_hex_dump();
-	Eeprom_write(cur_i2C_addr, EEPROM_ASSY_WO_STRING_LAYOUT_POS,EEPROM_ASSY_WO_STRING_LAYOUT_SIZE,wo_no_str ); // Store PCB assy number, code and rev
-//	Eeprom_hex_dump();
-	Eeprom_write(cur_i2C_addr, EEPROM_ASSY_SN_STRING_LAYOUT_POS,EEPROM_BD_ASSY_SN_STRING_LAYOUT_SIZE,bd_serial_no_str ); // Store PCB assy number, code and rev
 
-	cur_calc_checksum = Calc_stored_checksum();
-	Store_checksum(cur_calc_checksum);
-*/
 	// Now turn Power off for 3 secs
 	ASC_Asci_msg(ROM_Read_romstr(CHECKING_DATA_RETENTION_MSG));
 	MAI_Set_power(OFF);
@@ -1084,11 +1092,18 @@ static void Start_eeprom_prog(void)
 		//Eeprom_hex_dump();
 	}
 	
-//	Eeprom_hex_dump();
-	
+	if(adapter_flag)
+	{
+		if(!Port_expander_test())
+		{
+			ASC_Asci_msg(ROM_Read_romstr(PORT_EXPANDER_TSET_FAILED_MSG));
+		}
+	}	
 
 	MAI_Set_power(OFF);
 	MAI_Set_header_cntrl(IP,LO);
+
+	ASC_Asci_msg(ROM_Read_romstr(BD_TEST_SUCCESS_MSG));
 
 	// Set Params for SN
 	user_ip_buf_ix = 0;	//reset user input buf index
@@ -1696,6 +1711,12 @@ static int8 Verify_stored_data(void)
 	}
 	return FALSE;
 }
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
 static void Prog_debug_details(void)
 {
 	ASC_Asci_msg("\n\n\rUpdating EEPROM !!\n\n\r");
@@ -1714,6 +1735,12 @@ static void Prog_debug_details(void)
 //	MEN_Set_cmd_bk_func(EEPROM_DEBUG_MSG,Eeprom_debug_menu);
 
 }
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
 
 static void Init_pe_debug_menu(void)
 {
@@ -1745,6 +1772,8 @@ static void Port_expander_debug_menu(void)
 		{
 			case 'X':
 			case 'x':
+				// Set all OPs low as 5V tolerant inputs to Port Expander hold up 3V3 power lines if left high
+				MAI_Set_port_expander_code(0);
 				MEN_Set_cmd_bk_func(DEBUG_MENU_MSG,Debug_menu);
 				return;
 			default:
@@ -1758,12 +1787,48 @@ static void Port_expander_debug_menu(void)
 		MAI_Set_port_expander_code((pe_code & 0x0f));
 		TIM_Set_delay(3000);
 		I2C_Read(cur_i2C_addr,1,&pe_data);
-		pe_data = pe_code; // Test Code
+		//pe_data = pe_code; // Test Code
 		sprintf((char *)tmpstr," %01x    %01x    %01x    %01x     - Data Read = %01x%01x%01x%01x\r",((pe_code >> 3) & 0x01),((pe_code >> 2) & 0x01),((pe_code >> 1) & 0x01),(pe_code & 0x01),((pe_data>>3) & 0x01), ((pe_data>>2) & 0x01), ((pe_data>>1) & 0x01), (pe_data & 0x01));
 		ASC_Asci_msg(tmpstr);
 		if(++pe_count >= PE_CODE_COUNT)
 			pe_count = 0;
 	}
+}
+static int8 Port_expander_test(void)
+{
+	int8 pe_data,cur_pe_cmd = SET_PE_ALL_IP_CMD;
+	int8 pass_flag = TRUE, *pf_msg;
+	
+	ASC_Asci_msg(ROM_Read_romstr(PORT_EXPANDER_TEST_MSG));	// display PCB assy PN message
+	
+	cur_i2C_addr = PORT_EXPAND_I2C_ADDR;
+	I2C_Write(cur_i2C_addr,1,&cur_pe_cmd);	
+	TIM_Wait(200);
+	for(pe_count = 0;pe_count < PE_CODE_COUNT; pe_count++)
+	{
+		//Set output
+		pe_code = pe_codes[pe_count];
+		MAI_Set_port_expander_code((pe_code & 0x0f));
+		TIM_Wait(100);
+		I2C_Read(cur_i2C_addr,1,&pe_data);
+		pe_data = pe_data & 0x0f;
+		if(pe_data != pe_code)
+		{
+			pass_flag = FALSE;
+			pf_msg = "FAIL";
+		}
+		else
+			pf_msg = "PASS";
+		
+		// Set all OPs low as 5V tolerant inputs to Port Expander hold up 3V3 power lines if left high
+		MAI_Set_port_expander_code(0);
+
+		sprintf((char *)tmpstr,"%01x%01x%01x%01x  ",((pe_code >> 3) & 0x01),((pe_code >> 2) & 0x01),((pe_code >> 1) & 0x01),(pe_code & 0x01));
+		ASC_Asci_msg(tmpstr);
+		sprintf((char *)tmpstr,"%01x%01x%01x%01x - %s\n\r",((pe_data>>3) & 0x01), ((pe_data>>2) & 0x01), ((pe_data>>1) & 0x01), (pe_data & 0x01),(char*)pf_msg);
+		ASC_Asci_msg(tmpstr);
+	}
+	return pass_flag;
 }
 /*====================================================================
 	FINAL TEST Funcs

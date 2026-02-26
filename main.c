@@ -99,7 +99,9 @@ void InitIO(void)
 {
 	PORTD = TJ_ID_BIT; // Enable pull up for TJ ID Bit
 	// Define and set DEBUG pin at PORTD bit 2 (Pin 20)
-	DDRD |= (DEBUG_BIT|PORT_EXPANDER_GSN3_BIT|PORT_EXPANDER_GSN2_BIT|PORT_EXPANDER_GSN2_BIT|PORT_EXPANDER_GSN0_BIT); // Ensure PORTD Bit 3 is set as Output
+	DDRD |= (DEBUG_BIT|PORT_EXPANDER_GSN3_BIT|PORT_EXPANDER_GSN2_BIT|PORT_EXPANDER_GSN1_BIT|PORT_EXPANDER_GSN0_BIT); // Ensure PORTD Bit 3 is set as Output
+	PORT_EXPANDER_GSN_PORT = (PORT_EXPANDER_GSN_PORT & 0x0f);
+	
 	
 	//Define Test Jig ID Port and Bit (PORTD Bit 3 (Pin 21)
 	DDRD &= ~TJ_ID_BIT; // Ensure PORTD Bit 3 is set as input

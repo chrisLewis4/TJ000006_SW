@@ -71,6 +71,7 @@ Description	:
 --------------------------------------------------------------------*/
 void TIM_Set_delay(int16 millisecs)
 {
+	delay_flag = FALSE;
 	set_delay = millisecs;
 	delay_cnt = 0;
 	TCNT1 = 0;				// reset TCNT
