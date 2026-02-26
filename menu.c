@@ -163,7 +163,7 @@ int8 const DOT_MSG[] PROGMEM =		{"."};
 
 int8 const FINAL_TEST_JIG_MSG[] PROGMEM = {"\n\nFinal Test Firmware\n\r"
 											   "*******************\n\n\r"};
-int8 const INVALID_JIG_ID_MSG[] PROGMEM = {"\n\n\r*** INVALID TEST JIG ID DETECTED ***\n\r"};								  
+int8 const INVALID_JIG_ID_MSG[] PROGMEM = {"\n\n\r!!! INVALID TEST JIG ID DETECTED !!!\n\r"};								  
 int8 const BD_TEST_JIG_MSG[] PROGMEM = {"\n\nBoard Test Firmware\n\r"
 										    "**********************\n\n\r"};
  /* common menu messages */
@@ -176,8 +176,8 @@ int8 const NET_ADAPT_PCB_MSG[] PROGMEM = {"Net Adapter PCB"};
 int8 const NET_ASSY_MSG[] PROGMEM = {"Net Final Assembly"};
 int8 const NET_ADAPT_ASSY_MSG[] PROGMEM = {"Net Adapter Final Assembly"};
 int8 const NET_EXTEND_ASSY_MSG[] PROGMEM = {"Net Extension Final Assembly"};
-int8 const STORED_DETAILS_MSG[] PROGMEM = {"\n\rEEPROM Contents\n\r"
-										   "===============\n\n\r"};
+int8 const STORED_DETAILS_MSG[] PROGMEM = {"\n\rCurrent EEPROM Contents\n\r"
+										       "=======================\n\n\r"};
 /* declare Terminal Menus text*/
 //*********************  Start Menu  ***************************
 int8 const FSTART_MENU_MSG[] PROGMEM =
@@ -267,6 +267,12 @@ int8 const CONNECT_BD_MSG[] PROGMEM =
 	"ENSURE FLYING LEAD IS CONNECTED to JUMPER\n\n\r"
 	"Press 'X' to exit or ENTER key to proceed\n\r"
 };
+int8 const CONNECT_ADAPTER_MSG[] PROGMEM =
+{
+	"\n\n\n\r"
+	"Connect the Adapter board Under Test to the Jig\n\r"
+	"Press 'X' to exit or ENTER key to proceed\n\r"
+};
 
 int8 const PROG_EEPROM_MSG[] PROGMEM =
 {
@@ -281,14 +287,26 @@ int8 const PROG_SUCCESS_MSG[] PROGMEM =
 
 int8 const PORT_EXPANDER_TSET_FAILED_MSG[] PROGMEM =
 {
-	"\n\r!!! PORT EXPANDER TEST FAILED ***\n\n\r"
+	"\n\r!!! PORT EXPANDER TEST FAILED !!!\n\r"
+	"Press 'X' to exit or ENTER key to Retry\n\r"
+
 };
 
 int8 const BD_TEST_SUCCESS_MSG[] PROGMEM =
 {
-	"\n\r*** TEST PASSED ***\n\r"
+	"\n\n\r*******************\n\r"
+	"*** TEST PASSED ***\n\r"
+	"*******************\n\n\r"
 	"Remove Board and apply TESTED MARK\n\n\r"
 };
+int8 const BD_TEST_FAIL_MSG[] PROGMEM =
+{
+	"!!!!!!!!!!!!!!!!!!!\n\r"
+	"!!! TEST FAILED !!!\n\r"
+	"!!!!!!!!!!!!!!!!!!!\n\n\r"
+	"Remove Board and quarantine or retest board\n\n\r"
+};
+
 int8 const MAX_USER_IP_LEN_EXEEDED_MSG[] PROGMEM =
 {
 	"\n\n\rToo many characters entered - Please retry\n\r"	
@@ -322,9 +340,7 @@ int8 const CHECKSUM_MISMATCH_MSG[] PROGMEM =
 };
 int8 const CHECKSUM_MATCH_MSG[] PROGMEM =
 {
-	"\n\n\r*** WARNING ***\n\rCalculated and Stored Checksum Match\n\n\r"
-	"Current Contents\n\r"
-	"----------------\n\r"
+	"\n\n\r!!! WARNING !!!\n\rCalculated and Stored Checksum Match\n\n\r"
 };
 int8 const DATA_NOT_SET_MSG[] PROGMEM =
 {
@@ -363,15 +379,15 @@ int8 const DATA_RETENTION_BAD_MSG[] PROGMEM =
 
 int8 const EEPROM_READ_ERROR_MSG[] PROGMEM =
 {
-	"\n\n\r *** EEPROM READ ERROR ***\n\n\r"
+	"\n\n\r !!! EEPROM READ ERROR !!!\n\n\r"
 };
 int8 const ALPHANUMERIC_CHARS_ONLY_MSG[] PROGMEM =
 {
-	"\n\n\r *** Please Re-Enter using Alpha-numeric characters only ('A'-'Z', '0'-'9') ***\n\r"
+	"\n\n\r !!! Please Re-Enter using Alpha-numeric characters only ('A'-'Z', '0'-'9') !!!\n\r"
 };
 int8 const NUMERIC_CHARS_ONLY_MSG[] PROGMEM =
 {
-	"\n\n\r *** Please Re-Enter using numeric characters only ('0'-'9') ***\n\r"
+	"\n\n\r !!! Please Re-Enter using numeric characters only ('0'-'9') !!!\n\r"
 };
 
 /*int8 const DEBUG_MENU_MSG[] PROGMEM =
@@ -835,7 +851,7 @@ Description	:
 --------------------------------------------------------------------*/
 static void Display_assy_details(void)
 {
-	char *msg;
+	int8 *msg;
 	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
 	ASC_Asci_msg(ROM_Read_romstr(CHECK_DETAILS_MSG));
 	MEN_Set_cmd_bk_func(PRESS_X_OR_PROCEED_MSG,Bd_test_start_menu);
@@ -892,6 +908,7 @@ Parameters	:
 Returns		:
 Description	:
 --------------------------------------------------------------------*/
+static const int8 *cur_menu_msg;
 
 static void Get_serial_no(void)
 {
@@ -939,9 +956,11 @@ static void Get_serial_no(void)
 						MEN_Set_cmd_bk_func(EEPROM_DEBUG_MSG,Eeprom_debug_menu);
 					}
 					else if(adapter_flag)
-						MEN_Set_cmd_bk_func(PROG_EEPROM_MSG,Start_eeprom_prog);
+						cur_menu_msg = CONNECT_ADAPTER_MSG;
 					else
-						MEN_Set_cmd_bk_func(CONNECT_BD_MSG,Connect_bd_menu);
+						cur_menu_msg = CONNECT_BD_MSG;
+
+					MEN_Set_cmd_bk_func(cur_menu_msg,Connect_bd_menu);
 				}
 			}
 			else
@@ -983,7 +1002,7 @@ static void Connect_bd_menu(void)
 			break;
 		default:
 			ASC_Asci_msg(ROM_Read_romstr(PRESS_X_OR_PROCEED_MSG));
-			MEN_Set_cmd_bk_func(CONNECT_BD_MSG,Connect_bd_menu);
+			MEN_Set_cmd_bk_func(cur_menu_msg,Connect_bd_menu);
 			break;
 	}
 	
@@ -1094,15 +1113,29 @@ static void Start_eeprom_prog(void)
 	
 	if(adapter_flag)
 	{
-		if(!Port_expander_test())
+		while(!Port_expander_test())
 		{
 			ASC_Asci_msg(ROM_Read_romstr(PORT_EXPANDER_TSET_FAILED_MSG));
+			rx_byte  = Wait_for_x_or_enter();
+			if(rx_byte == 'x')
+			{
+				ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+				ASC_Asci_msg(ROM_Read_romstr(BD_TEST_FAIL_MSG));
+				user_ip_buf_ix = 0;	//reset user input buf index
+				user_ip_max_chars = BD_SN_STRING_LEN;
+				MEN_Set_cmd_bk_func(ENTER_SN_MSG,Get_serial_no);
+				MAI_Set_power(OFF);
+				return;
+			}
+			ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+			
 		}
 	}	
 
 	MAI_Set_power(OFF);
 	MAI_Set_header_cntrl(IP,LO);
 
+	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
 	ASC_Asci_msg(ROM_Read_romstr(BD_TEST_SUCCESS_MSG));
 
 	// Set Params for SN
@@ -1719,7 +1752,7 @@ Description	:
 --------------------------------------------------------------------*/
 static void Prog_debug_details(void)
 {
-	ASC_Asci_msg("\n\n\rUpdating EEPROM !!\n\n\r");
+	ASC_Asci_msg((int8 *)"\n\n\rUpdating EEPROM !!\n\n\r");
 	sprintf((char *)formatted_assy_no_string,"%s-01-%s",assy_no_str, assy_rev_str);
 	Eeprom_write(cur_i2C_addr, EEPROM_ASSY_NUM_STRING_LAYOUT_POS,EEPROM_ASSY_NUM_STRING_LAYOUT_SIZE,formatted_assy_no_string ); // Store PCB assy number, code and rev
 	//	Eeprom_hex_dump();
@@ -1797,7 +1830,8 @@ static void Port_expander_debug_menu(void)
 static int8 Port_expander_test(void)
 {
 	int8 pe_data,cur_pe_cmd = SET_PE_ALL_IP_CMD;
-	int8 pass_flag = TRUE, *pf_msg;
+	int8 pass_flag = TRUE;
+	char *pf_msg;
 	
 	ASC_Asci_msg(ROM_Read_romstr(PORT_EXPANDER_TEST_MSG));	// display PCB assy PN message
 	
@@ -1842,42 +1876,14 @@ Description	:
 --------------------------------------------------------------------*/
 static void Fstart_menu(void)
 {
-	int8 rx_byte,*msg = NULL;
+	int8 rx_byte;
 
 	/* get any RX chars */
 	rx_byte = Cmd_check(CMD_ECHO);
 	/* return if none available */
 	if(!rx_byte)
-	return;
+		return;
 
-	/* now process RX char 
-	switch(rx_byte)
-	{
-		case 'N':
-		case 'n':
-			cur_i2C_addr = NET_CONN_I2C_ADDR;
-			adapter_flag = FALSE;
-			msg = ROM_Read_romstr(NET_ASSY_MSG);
-			break;
-		case 'L':
-		case 'l':
-			cur_i2C_addr = NET_CONN_I2C_ADDR;
-			adapter_flag = TRUE;
-			msg = ROM_Read_romstr(NET_ADAPT_ASSY_MSG);
-			break;
-		case 'E':
-		case 'e':
-			cur_i2C_addr = NET_EXTEND_I2C_ADDR;
-			adapter_flag = FALSE;
-			msg = ROM_Read_romstr(NET_EXTEND_ASSY_MSG);
-			break;
-		default:
-			ASC_Asci_msg((int8 *const)ROM_Read_romstr(CMD_NOT_IMPLEMENTED_MSG));
-			MEN_Set_cmd_bk_func(FSTART_MENU_MSG,Fstart_menu);
-			return;
-	}*/
-//	sprintf(tmpstr,"\n\n\r%s Selected\n\n\r",msg);
-//	ASC_Asci_msg(tmpstr);
 	user_ip_buf_ix = 0;
 	user_ip_max_chars = ASSY_STRING_LEN;
 	MEN_Set_cmd_bk_func(NULL,Get_final_assy_no);
