@@ -1,12 +1,32 @@
 /********************************************************************
-*                                                                   *
-*   Filename:   menu.c                                             *
-*   Originator: C.Lewis                                             *
-*   Project:    6489-90 Universal Interface Board Test Jig          *
-*                                                                   *
-*   This module is responsible for the debug menu generation and    *
-*   Functionality                                                   *
-*                                                                   *
+                                                                   
+Filename:   menu.c                                              
+Originator: C.Lewis                                             
+Project:    TJ000006_SW EGI Net connector/Adapter Test Firmware 
+
+This module is responsible for the debug and test menus used to test the following:
+	* Net Connector PCB assembly - 6519-01
+	* Net Adapter PCB assembly - 6768-01
+	* Net final assemblies - many various P/Ns
+	* Net Extender final assembly - 6708-00
+	* Net adapter final assembly - 6771-00 (256 Chan) & 6772-00 (128 chan)
+	
+The board assy tests are configured by means of a jumper on the TJ000006 Hardware
+	6519-01 Net connector board:
+		* Verifies the EEPROM reading, writing and data retention
+		* Checking the function of the I²C address jumper 
+		* Storing the WO number, SN and assy numbers according to specification detailed in TD6500006
+	6768-01 Net Adapter board
+		* Verifies the EEPROM reading, writing and data retention
+		* Verifies the correct operation of the I²C Port expander which read the net's Legacy configuration
+	Net final assemblies
+		* Programs the final assy no and SN of the finished net
+	6771-00 (256 Chan) & 6772-00 (128 chan) Net adapter final assemblies
+		* Programs the final assy no and SN of the finished net adapters
+		* Verifies the correct operation of the I²C Port expander which read the net's Legacy configuration
+	Net extender
+		* Programs the final assy no and SN of the finished net extenders
+		
 ********************************************************************/
 
 /*==================================================================*/
@@ -45,7 +65,7 @@ static void Get_serial_no(void);
 static void Connect_bd_menu(void);
 static void Display_assy_details(void);
 
-// Menu stae MC funcs
+// Menu state MC funcs
 static void Test_msg_func(void);
 static int8 Cmd_check(int8);
 
@@ -73,6 +93,15 @@ static void Init_pe_debug_menu(void);
 static void Port_expander_debug_menu(void);
 static int8 Port_expander_test(void);
 
+// Final test specific funcs
+static void Get_final_assy_rev_no(void);
+static void Display_final_assy_details(void);
+static void Get_final_assy_sn(void);
+static void Final_test_start_menu(void);
+static void Prog_final_assy_details(void);
+
+
+
 
 
 
@@ -80,7 +109,7 @@ static int8 Port_expander_test(void);
 /*==================================================================*/
 /*                      LOCAL TYPE DEFINITIONS                      */
 /*==================================================================*/
-
+typedef enum final_assy_types {NET_ASSY, EXTENSION_ASSY, ADAPTER_ASSY, LASTASSY_TYPE} FINAL_ASSY_TYPES;
 /*==================================================================*/
 /*                      LOCAL MACRO DEFINITIONS                     */
 /*==================================================================*/
@@ -173,9 +202,6 @@ int8 const BD_TEST_JIG_MSG[] PROGMEM = {"\n\nBoard Test Firmware\n\r"
 int8 const NET_CONN_PCB_MSG[] PROGMEM = {"Net Connector PCB"};
 int8 const NET_ADAPT_PCB_MSG[] PROGMEM = {"Net Adapter PCB"};
 	
-int8 const NET_ASSY_MSG[] PROGMEM = {"Net Final Assembly"};
-int8 const NET_ADAPT_ASSY_MSG[] PROGMEM = {"Net Adapter Final Assembly"};
-int8 const NET_EXTEND_ASSY_MSG[] PROGMEM = {"Net Extension Final Assembly"};
 int8 const STORED_DETAILS_MSG[] PROGMEM = {"\n\rCurrent EEPROM Contents\n\r"
 										       "=======================\n\n\r"};
 /* declare Terminal Menus text*/
@@ -183,10 +209,36 @@ int8 const STORED_DETAILS_MSG[] PROGMEM = {"\n\rCurrent EEPROM Contents\n\r"
 int8 const FSTART_MENU_MSG[] PROGMEM =
 {
 	"\n\n\r"
-	"Enter Final Assembly Number\n\r"
-	"(Product Code - 4 Numeric characters\n\r"
-	"<ENTER>- To refresh screen\n\n\r"
+	"Select the Product Type\n\r"
+	"1 - NET Assembly\n\r"
+	"2 - NET Extension\n\r"
+	"3 - NET Adapter\n\r"
 };
+int8 const INVALID_ENTRY_MSG[] PROGMEM =
+{
+	"\n\n\r"
+	"!!! INVALID ENTRY - Please Retry\n\r"
+};
+int8 const ENTER_FINAL_ASSY_NO_MSG[] PROGMEM =
+{
+	"\n\n\r"
+	"Enter the Product Part Number - 4 Numeric characters\n\r"
+};
+int8 const ENTER_FINAL_ASSY_REV_MSG[] PROGMEM =
+{
+	"\n\n\n\r"
+	"Enter the Product's Revision - 3 Characters (e.g. ""00A"")\n\r"
+};
+static const int8 NET_ASSY_MSG[] PROGMEM = {"NET ASSEMBLY"};
+static const int8 EXTENSION_ASSY_MSG[] PROGMEM = {"NET EXTENSION ASSEMBLY"};
+static const int8 ADAPTER_ASSY_MSG[] PROGMEM = {"NET ADAPTER ASSEMBLY"};
+
+int8 const ENTER_FINAL_ASSY_SN_MSG[] PROGMEM =
+{
+	"\n\n\n\r"
+	"Enter the Serial no. of the Final Assembly under test\n\r(MAX = 12 Characters)\n\r"
+};
+
 int8 const START_MENU_MSG[] PROGMEM =
 {
 	"\n\n\r"
@@ -224,21 +276,17 @@ int8 const ENTER_WO_MSG[] PROGMEM =
 	"\n\n\n\r"
 	"Enter the Works Order No (WO) of the batch of boards Under Test\n\r(MAX = 10 Characters)\n\r"
 };
-int8 const ENTER_ASSY_NO_MSG[] PROGMEM =
+int8 const ENTER_BD_ASSY_NO_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
 	"Enter the board's Assembly No of the batch of boards Under Test\n\r(4 Characters)\n\r"
 };
-int8 const ENTER_ASSY_REV_MSG[] PROGMEM =
+int8 const ENTER_BD_ASSY_REV_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
 	"Enter the board's Assembly Revision No of the batch of boards Under Test\n\r(3 Characters)\n\r"
 };
-int8 const ENTER_FINAL_ASSY_REV_MSG[] PROGMEM =
-{
-	"\n\n\n\r"
-	"Enter the Product's Current Revision No. of the Final Assembly Under Test\n\r(3 Characters)\n\r"
-};
+
 int8 const CHECK_DETAILS_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
@@ -309,34 +357,34 @@ int8 const BD_TEST_FAIL_MSG[] PROGMEM =
 
 int8 const MAX_USER_IP_LEN_EXEEDED_MSG[] PROGMEM =
 {
-	"\n\n\rToo many characters entered - Please retry\n\r"	
+	"\n\n\r!!! Too many characters entered - Please retry !!!\n\r"	
 };
 
 int8 const NOT_ENOUGH_ASSY_NO_IP_CHARS_MSG[] PROGMEM =
 {
-	"\n\n\rNot Enough characters entered - 4 Required\n\rPlease retry\n\r"
+	"\n\n\r!!! Not Enough characters entered - 4 Required !!!\n\rPlease retry\n\r"
 };
 int8 const NOT_ENOUGH_ASSY_REV_IP_CHARS_MSG[] PROGMEM =
 {
-	"\n\n\rNot Enough characters entered - 3 Required\n\rPlease retry\n\r"
+	"\n\n\r!!! Not Enough characters entered - 3 Required !!!\n\rPlease retry\n\r"
 };
 int8 const NO_FINAL_ASSY_REV_SN_IP_CHARS_MSG[] PROGMEM =
 {
-	"\n\n\rNo characters entered - maximum of 12 Required\n\rPlease retry\n\r"
+	"\n\n\r!!! No characters entered - maximum of 12 Required !!!\n\rPlease retry\n\r"
 };
 
 int8 const NOT_ENOUGH_WO_NO_IP_CHARS_MSG[] PROGMEM =
 {
-	"\n\n\rNot Enough characters for Works Order - 1 Required\n\rPlease retry\n\r"
+	"\n\n\r!!! Not Enough characters for Works Order - 1 Required !!!\n\rPlease retry\n\r"
 };
 
 int8 const CHECK_HEADER_MSG[] PROGMEM =
 {
-	"\n\n\rCheck Header is fitted correctly\n\rPress 'x' to ENTER key to retry\n\r"
+	"\n\n\r!!! Check Header is fitted correctly !!!\n\rPress 'x' to ENTER key to retry\n\r"
 };
 int8 const CHECKSUM_MISMATCH_MSG[] PROGMEM =
 {
-	"\n\n\rChecksum mismatch\n\rSetting up EEPROM\n\r"
+	"\n\n\r!!! Checksum mismatch !!!\n\rSetting up EEPROM\n\r"
 };
 int8 const CHECKSUM_MATCH_MSG[] PROGMEM =
 {
@@ -389,15 +437,6 @@ int8 const NUMERIC_CHARS_ONLY_MSG[] PROGMEM =
 {
 	"\n\n\r !!! Please Re-Enter using numeric characters only ('0'-'9') !!!\n\r"
 };
-
-/*int8 const DEBUG_MENU_MSG[] PROGMEM =
-{
-	"\n\n\n\n\r"
-	"DEBUG MENU\n\r"
-	"=============\n\r"
-	"E - EEPROM Debug\n\r"
-	"X - Exit to Start Menu\n\r"
-};*/
 
 int8 const EEPROM_DEBUG_MSG[] PROGMEM =
 {
@@ -462,7 +501,7 @@ static int8 bd_serial_no_str[BD_SN_STRING_LEN+1];
 static int8 final_assy_serial_no_str[FINAL_SN_STRING_LEN+1];
 static int8 final_assy_no_str[ASSY_STRING_LEN+1];
 static int8 final_assy_rev_str[ASSY_REV_STRING_LEN+1];
-static int8 formatted_assy_no_string[EEPROM_ASSY_NUM_STRING_LAYOUT_SIZE];
+static int8 formatted_assy_no_string[EEPROM_ASSY_NUM_STRING_LAYOUT_SIZE+1];
 // define EEPROM address storage
 static int8 cur_i2C_addr;
 static int16 cur_calc_checksum;
@@ -471,6 +510,11 @@ static int16 cur_stored_checksum;
 //define PCB type flag
 static int8 adapter_flag;
 static int8 debug_flag;
+static JIG_ID_ENUM bd_id;
+
+//define Final Assy type
+static FINAL_ASSY_TYPES final_assy_type;
+static int8 const *final_assy_name;
 
 /*********************************************************************
 *                               FUNCTIONS                            *
@@ -484,8 +528,6 @@ Description :Initializes some of the test module variables just in case
 --------------------------------------------------------------------*/
 void MEN_Init(void)
 {
-	int bd_id;
-	
 	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
 	ASC_Asci_msg((int8 *const)ROM_Read_romstr(COPYRIGHT_MSG));		//display Copyright msg
 	ASC_Asci_msg((int8 *const)ROM_Read_romstr(OPENING_MENU_MSG));	//display Opening msg
@@ -627,24 +669,33 @@ static int8 Cmd_check(int8 echo_stat)
 //========================================================================================================================================
 //	Product Specific Menus
 //========================================================================================================================================
+//====================================================================
+// Name			:Start_menu
+// Parameters	:NONE
+// Returns		:NONE
+// Description	:Set as the cmd_func when command menu is invoked
+//             It gets any RX char and processes them according to their value
+//--------------------------------------------------------------------
 
 /*====================================================================
-Name        :Start_menu
-Parameters  :NONE
-Returns     :NONE
-Description :Set as the cmd_func when command menu is invoked
-             It gets any RX char and processes them according to their value
+Name        :
+Parameters  :
+Returns     :
+Description :
 --------------------------------------------------------------------*/
 
 static void Start_menu(void)
 {
 	int8 rx_byte;
 
+	if(bd_id == FINAL_TEST_JIGID)
+		MEN_Set_cmd_bk_func(FSTART_MENU_MSG,Fstart_menu); // Display Final test start menu
+	
 	/* get any RX chars */
 	rx_byte = Cmd_check(CMD_ECHO);
 	/* return if none available */
 	if(!rx_byte)
-	return;
+		return;
 
 	/* now process RX char */
 	switch(rx_byte)
@@ -669,12 +720,13 @@ static void Start_menu(void)
 		break;
 	}
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static void Select_bd_menu(void)
 {
 	int8 rx_byte, *msg = NULL;
@@ -714,12 +766,13 @@ static void Select_bd_menu(void)
 	MEN_Set_cmd_bk_func(ENTER_WO_MSG,Get_wo_no);
 }
 
-/*====================================================================
+/*==================================================================
 Name		:
 Parameters	:
 Returns		:
 Description	:
---------------------------------------------------------------------*/
+------------------------------------------------------------------*/
+
 static void Get_wo_no(void)
 {
 	int8 rx_byte;
@@ -779,15 +832,16 @@ static void Get_wo_no(void)
 
 	user_ip_buf_ix = 0;	//reset user input buf index
 	user_ip_max_chars = ASSY_REV_STRING_LEN;
-	MEN_Set_cmd_bk_func(ENTER_ASSY_REV_MSG,Get_assy_rev_no);
+	MEN_Set_cmd_bk_func(ENTER_BD_ASSY_REV_MSG,Get_assy_rev_no);
 
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static void Get_assy_rev_no(void)
 {
 int8 rx_byte;
@@ -814,7 +868,7 @@ int8 rx_byte;
 				ASC_Asci_msg((int8 *const)ROM_Read_romstr(NOT_ENOUGH_ASSY_REV_IP_CHARS_MSG));
 				user_ip_buf_ix = 0;	//reset user input buf index
 				user_ip_max_chars = ASSY_REV_STRING_LEN;
-				MEN_Set_cmd_bk_func(ENTER_ASSY_REV_MSG,Get_assy_rev_no);
+				MEN_Set_cmd_bk_func(ENTER_BD_ASSY_REV_MSG,Get_assy_rev_no);
 				return;
 			}
 			break;
@@ -830,7 +884,7 @@ int8 rx_byte;
 				ASC_Asci_msg((int8 *const)ROM_Read_romstr(ALPHANUMERIC_CHARS_ONLY_MSG));
 				user_ip_buf_ix = 0;	//reset user input buf index
 				user_ip_max_chars = ASSY_REV_STRING_LEN;
-				MEN_Set_cmd_bk_func(ENTER_ASSY_REV_MSG,Get_assy_rev_no);
+				MEN_Set_cmd_bk_func(ENTER_BD_ASSY_REV_MSG,Get_assy_rev_no);
 				return;
 
 			}
@@ -843,12 +897,13 @@ int8 rx_byte;
 	Display_assy_details();
 	
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static void Display_assy_details(void)
 {
 	int8 *msg;
@@ -864,12 +919,13 @@ static void Display_assy_details(void)
 	sprintf((char *)tmpstr,"%s\n\n\r",msg);
 	ASC_Asci_msg(tmpstr);
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 
 static void Bd_test_start_menu(void)
 {
@@ -879,7 +935,7 @@ static void Bd_test_start_menu(void)
 	rx_byte = Cmd_check(CMD_ECHO);
 	// return if none available
 	if(!rx_byte)
-	return;
+		return;
 
 	// now process RX char
 	switch(rx_byte)
@@ -896,18 +952,19 @@ static void Bd_test_start_menu(void)
 			MEN_Set_cmd_bk_func(ENTER_SN_MSG,Get_serial_no);
 			break;
 		default:
-			ASC_Asci_msg(ROM_Read_romstr(PRESS_X_OR_PROCEED_MSG));
+			ASC_Asci_msg(ROM_Read_romstr(INVALID_ENTRY_MSG));
 			MEN_Set_cmd_bk_func(PRESS_X_OR_PROCEED_MSG,Bd_test_start_menu);
 			break;
 	}
 }
 
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static const int8 *cur_menu_msg;
 
 static void Get_serial_no(void)
@@ -973,12 +1030,13 @@ static void Get_serial_no(void)
 			break;
 	}
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static void Connect_bd_menu(void)
 {
 	int8 rx_byte;
@@ -1007,12 +1065,13 @@ static void Connect_bd_menu(void)
 	}
 	
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static void Start_eeprom_prog(void)
 {
 	int8 rx_byte;
@@ -1145,6 +1204,13 @@ static void Start_eeprom_prog(void)
 	MEN_Set_cmd_bk_func(ENTER_NEXT_SN_MSG,Get_serial_no);
 
 }
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static int8 Wait_for_x_or_enter(void)
 {
 	int8 rx_byte;
@@ -1187,13 +1253,13 @@ static int8 Wait_for_x_or_enter(void)
 
 
 
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
-#define SET_PE_ALL_IP_CMD 0x00
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 
 static void Debug_menu(void)
 {
@@ -1238,12 +1304,13 @@ static void Debug_menu(void)
 	MEN_Set_cmd_bk_func(EEPROM_DEBUG_MSG,Eeprom_debug_menu);
 
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static void Eeprom_debug_menu(void)
 {
 	int8 rx_byte, buf[EEPROM_PAGE_SIZE+2];
@@ -1349,12 +1416,13 @@ static void Eeprom_debug_menu(void)
  
 
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 #define EEPROM_RETRY_COUNT 1000
 
 static int8 Eeprom_read(int8 eeprom_addr, int16 byte_addr,int16 byte_count,int8 *data)
@@ -1392,12 +1460,13 @@ static int8 Eeprom_read(int8 eeprom_addr, int16 byte_addr,int16 byte_count,int8 
 	
 	return TRUE;
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static void Eeprom_write(int8 eeprom_addr,int16 byte_addr, int16 byte_count,int8 *data)
 {
 	int8 cur_addr,x, buf[EEPROM_PAGE_SIZE+1] ;
@@ -1426,12 +1495,13 @@ static void Eeprom_write(int8 eeprom_addr,int16 byte_addr, int16 byte_count,int8
 	}
 }
 
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static void Eeprom_fill(int8 set_char)
 {
 	int8 buf;
@@ -1465,12 +1535,13 @@ static void Eeprom_fill(int8 set_char)
 	while(!ASC_Asci_tx_empty());
 }
 
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static void Eeprom_hex_dump(void)
 {
 	int8 n,buf[EEPROM_PAGE_SIZE+2];
@@ -1495,12 +1566,13 @@ static void Eeprom_hex_dump(void)
 		ASC_Asci_msg((int8 *)"\n\r");
 	}
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static int16 Get_stored_checksum(void)
 {
 	int8  buf[EEPROM_CHECKSUM_LAYOUT_SIZE+1];
@@ -1517,12 +1589,13 @@ static int16 Get_stored_checksum(void)
 
 	return checksum;
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static void Store_checksum(int16 checksum)
 {
 	int8 buf[EEPROM_CHECKSUM_LAYOUT_SIZE+1];
@@ -1534,12 +1607,13 @@ static void Store_checksum(int16 checksum)
 //	ASC_Asci_msg(tmpstr);
 	Eeprom_write(cur_i2C_addr, EEPROM_CHECKSUM_LAYOUT_POS,EEPROM_CHECKSUM_LAYOUT_SIZE, buf);
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static int16 Calc_stored_checksum(void)
 {
 	int8 n,buf[EEPROM_PAGE_SIZE+2];
@@ -1562,12 +1636,12 @@ static int16 Calc_stored_checksum(void)
 	checksum = ~checksum;
 	return checksum;
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+///====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
 static int8 Get_stored_digit_string(int16 eeprom_pos, int16 size, int8*buf)
 {
 	int8 x;
@@ -1589,13 +1663,12 @@ static int8 Check_number_char(int8 c)
 {
 	return ((c >= 0x30) && (c <= 0x39));
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
-
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
 static int8 Get_stored_alpha_string(int16 eeprom_pos, int16 size, int8*buf)
 {
 	int8 x;
@@ -1619,12 +1692,13 @@ static int8 Check_alpha_char(int8 c)
 {
 	return ( ((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '-') );
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static void	Display_formatted_assy_info(void)
 {
 	int8 *ptr, *ptr1, tmp[EEPROM_BD_ASSY_SN_STRING_LAYOUT_SIZE];
@@ -1667,9 +1741,9 @@ static void	Display_formatted_assy_info(void)
 	while(!ASC_Asci_tx_empty());
 	ASC_Asci_msg(ROM_Read_romstr(PRODUCT_SN_MSG));	// display Product SN message
 	ptr = (int8 *)ROM_Read_romstr(DATA_NOT_SET_MSG);
-	if(Get_stored_alpha_string(EEPROM_FINAL_PROD_SN_LAYOUT_POS,EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE,tmpstr))
+	if(Get_stored_alpha_string(EEPROM_FINAL_PROD_SN_LAYOUT_POS,EEPROM_FINAL_PROD_SN_LAYOUT_SIZE,tmpstr))
 	{
-		ptr1 = tmpstr + EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE;
+		ptr1 = tmpstr + EEPROM_FINAL_PROD_SN_LAYOUT_SIZE;
 		*ptr1++ = '-';
 		if(Get_stored_alpha_string(EEPROM_FINAL_PROD_CODE_LAYOUT_POS,EEPROM_FINAL_PROD_SN_LAYOUT_SIZE,ptr1))
 		{
@@ -1711,12 +1785,13 @@ static void	Display_formatted_assy_info(void)
 	ASC_Asci_msg(ROM_Read_romstr(NEWLINE_MSG));	// newline
 
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static int8 Verify_stored_data(void)
 {
 	if(Get_stored_alpha_string(EEPROM_ASSY_NUM_STRING_LAYOUT_POS,EEPROM_ASSY_NUM_STRING_LAYOUT_SIZE,tmpstr))
@@ -1744,12 +1819,13 @@ static int8 Verify_stored_data(void)
 	}
 	return FALSE;
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static void Prog_debug_details(void)
 {
 	ASC_Asci_msg((int8 *)"\n\n\rUpdating EEPROM !!\n\n\r");
@@ -1768,12 +1844,15 @@ static void Prog_debug_details(void)
 //	MEN_Set_cmd_bk_func(EEPROM_DEBUG_MSG,Eeprom_debug_menu);
 
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
+#define PE_CODE_COUNT 10
+#define SET_PE_ALL_IP_CMD 0x00
 
 static void Init_pe_debug_menu(void)
 {
@@ -1784,8 +1863,13 @@ static void Init_pe_debug_menu(void)
 	MEN_Set_cmd_bk_func(PORT_EXPANDER_DEBUG_MSG,Port_expander_debug_menu);
 	TIM_Set_delay(200);
 }
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
 
-#define PE_CODE_COUNT 10
 
 static int8 pe_code = 0;
 static int8 pe_count = 0;
@@ -1827,6 +1911,13 @@ static void Port_expander_debug_menu(void)
 			pe_count = 0;
 	}
 }
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static int8 Port_expander_test(void)
 {
 	int8 pe_data,cur_pe_cmd = SET_PE_ALL_IP_CMD;
@@ -1868,32 +1959,61 @@ static int8 Port_expander_test(void)
 	FINAL TEST Funcs
 ====================================================================*/
 
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static void Fstart_menu(void)
 {
 	int8 rx_byte;
 
-	/* get any RX chars */
+	// get any RX chars 
 	rx_byte = Cmd_check(CMD_ECHO);
-	/* return if none available */
+	// return if none available 
 	if(!rx_byte)
 		return;
 
+	/* now process RX char */
+	switch(rx_byte)
+	{
+		case '1':
+			final_assy_type = NET_ASSY;
+			final_assy_name = NET_ASSY_MSG;
+			MAI_Set_header_cntrl(OP,LO);
+			cur_i2C_addr = EEPROM_ADDR_LO;
+			break;
+		case '2':
+			final_assy_type = EXTENSION_ASSY;
+			final_assy_name = EXTENSION_ASSY_MSG;
+			MAI_Set_header_cntrl(OP,HI);
+			cur_i2C_addr = EEPROM_ADDR_HI;
+			break;
+		case '3':
+			final_assy_type = ADAPTER_ASSY;
+			final_assy_name = ADAPTER_ASSY_MSG;
+			MAI_Set_header_cntrl(OP,LO);
+			cur_i2C_addr = EEPROM_ADDR_LO;
+			break;
+		default:
+			ASC_Asci_msg((int8 *const)ROM_Read_romstr(INVALID_ENTRY_MSG));
+			MEN_Set_cmd_bk_func(FSTART_MENU_MSG,Fstart_menu);
+			return;
+	}
+		
 	user_ip_buf_ix = 0;
 	user_ip_max_chars = ASSY_STRING_LEN;
-	MEN_Set_cmd_bk_func(NULL,Get_final_assy_no);
+	MEN_Set_cmd_bk_func(ENTER_FINAL_ASSY_NO_MSG,Get_final_assy_no);
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+
 static void Get_final_assy_no(void)
 {
 	int8 rx_byte;
@@ -1902,7 +2022,7 @@ static void Get_final_assy_no(void)
 	rx_byte = Cmd_check(CMD_ECHO);
 	/* return if none available */
 	if(!rx_byte)
-	return;
+		return;
 
 	/* now process RX char */
 	switch(rx_byte)
@@ -1915,25 +2035,23 @@ static void Get_final_assy_no(void)
 			return;
 		case '\n':
 		case '\r':
-			if(user_ip_buf_ix == 0)
-			{
-				ASC_Asci_msg((int8 *const)ROM_Read_romstr(NOT_ENOUGH_ASSY_NO_IP_CHARS_MSG));
-				user_ip_buf_ix = 0;	//reset user input buf index
-				user_ip_max_chars = ASSY_STRING_LEN;
-				MEN_Set_cmd_bk_func(ENTER_ASSY_NO_MSG,Get_final_assy_no);
-			}
+			ASC_Asci_msg((int8 *const)ROM_Read_romstr(NOT_ENOUGH_ASSY_NO_IP_CHARS_MSG));
+			user_ip_buf_ix = 0;	//reset user input buf index
+			user_ip_max_chars = ASSY_STRING_LEN;
+			MEN_Set_cmd_bk_func(ENTER_FINAL_ASSY_NO_MSG,Get_final_assy_no);
 			break;
 		default:
 		if(Check_number_char(rx_byte))
 		{
 			user_ip_buf[user_ip_buf_ix] = rx_byte;
-			if(++user_ip_buf_ix == user_ip_max_chars)
+			user_ip_buf_ix++;
+			if(user_ip_buf_ix >= user_ip_max_chars)
 			{
 				user_ip_buf[user_ip_buf_ix] = 0; // terminate string
 				strcpy((char *)final_assy_no_str,(char *)user_ip_buf);
 				user_ip_buf_ix = 0;	//reset user input buf index
 				user_ip_max_chars = ASSY_REV_STRING_LEN;
-				MEN_Set_cmd_bk_func(ENTER_ASSY_REV_MSG,Get_assy_rev_no);
+				MEN_Set_cmd_bk_func(ENTER_FINAL_ASSY_REV_MSG,Get_final_assy_rev_no);
 			}
 		}
 		else
@@ -1941,17 +2059,18 @@ static void Get_final_assy_no(void)
 			ASC_Asci_msg((int8 *const)ROM_Read_romstr(NUMERIC_CHARS_ONLY_MSG));
 			user_ip_buf_ix = 0;							//reset user input buf index
 			user_ip_max_chars = ASSY_STRING_LEN; // Set max chars for assy
-			MEN_Set_cmd_bk_func(ENTER_ASSY_NO_MSG,Get_final_assy_no);
+			MEN_Set_cmd_bk_func(ENTER_FINAL_ASSY_NO_MSG,Get_final_assy_no);
 		}
 		break;
 	}
 }
-/*====================================================================
-Name		:
-Parameters	:
-Returns		:
-Description	:
---------------------------------------------------------------------*/
+
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
 static void Get_final_assy_rev_no(void)
 {
 	int8 rx_byte;
@@ -1967,7 +2086,6 @@ static void Get_final_assy_rev_no(void)
 	{
 		case 'x':
 		case 'X':
-			if(user_ip_buf_ix == 0)
 			MEN_Set_cmd_bk_func(FSTART_MENU_MSG,Fstart_menu);
 			ASC_Asci_msg((int8 *const)ROM_Read_romstr(NEWPAGE_MSG));
 			return;
@@ -1987,7 +2105,7 @@ static void Get_final_assy_rev_no(void)
 			{
 				user_ip_buf[user_ip_buf_ix] = rx_byte;
 				if(++user_ip_buf_ix < user_ip_max_chars)
-				return;
+					return;
 			}
 			else
 			{
@@ -2004,10 +2122,188 @@ static void Get_final_assy_rev_no(void)
 	strcpy((char *)final_assy_rev_str,(char *)user_ip_buf);
 	// Display entered data
 	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
-	Display_assy_details();
+	final_assy_serial_no_str[0] = '\0'; //reset SN
+	Display_final_assy_details();
+	MEN_Set_cmd_bk_func(PRESS_X_OR_PROCEED_MSG,Final_test_start_menu);
+}
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+static void Display_final_assy_details(void)
+{
+	int8 *msg;
+	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+	ASC_Asci_msg(ROM_Read_romstr(CHECK_DETAILS_MSG));
+	sprintf((char *)tmpstr,"Final Assembly Type: %s\n\r",ROM_Read_romstr(final_assy_name));
+	ASC_Asci_msg(tmpstr);
+	sprintf((char *)tmpstr,"Final Assembly Number: %s-00-%s\n\n\r",final_assy_no_str,final_assy_rev_str);
+	ASC_Asci_msg(tmpstr);	
+	if(final_assy_serial_no_str[0] != '\0')
+	{
+		sprintf(tmpstr,"Serial No: %s\n\n\r", final_assy_serial_no_str);
+		ASC_Asci_msg(tmpstr);
+	}
 	
 }
+/*==================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+------------------------------------------------------------------*/
+static void Final_test_start_menu(void)
+{
+	int8 rx_byte;
 
+	// get any RX chars *
+	rx_byte = Cmd_check(CMD_ECHO);
+	// return if none available
+	if(!rx_byte)
+		return;
+
+	// now process RX char
+	switch(rx_byte)
+	{
+		case 'X':
+		case 'x':
+			ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+			MEN_Set_cmd_bk_func(FSTART_MENU_MSG,Fstart_menu);
+			break;
+		case '\n':
+		case '\r':
+			user_ip_buf_ix = 0;	//reset user input buf index
+			user_ip_max_chars = FINAL_SN_STRING_LEN;
+			MEN_Set_cmd_bk_func(ENTER_FINAL_ASSY_SN_MSG,Get_final_assy_sn);
+			break;
+		default:
+			ASC_Asci_msg(ROM_Read_romstr(INVALID_ENTRY_MSG));
+			MEN_Set_cmd_bk_func(PRESS_X_OR_PROCEED_MSG,Final_test_start_menu);
+			break;
+	}
+}
+
+/*==================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+------------------------------------------------------------------*/
+
+static void Get_final_assy_sn(void)
+{
+	int8 rx_byte;
+
+	/* get any RX chars */
+	rx_byte = Cmd_check(CMD_ECHO);
+	/* return if none available */
+	if(!rx_byte)
+	return;
+
+	/* now process RX char */
+	switch(rx_byte)
+	{
+		case 'x':
+		case 'X': // exit to start menu and return
+			if(user_ip_buf_ix == 0)
+			{
+				MEN_Set_cmd_bk_func(FSTART_MENU_MSG,Fstart_menu);
+				ASC_Asci_msg((int8 *const)ROM_Read_romstr(NEWPAGE_MSG));
+				return;
+			}
+			user_ip_buf[user_ip_buf_ix++] = rx_byte;
+			if(user_ip_buf_ix < user_ip_max_chars)
+				return;
+			break;			
+		case '\n':
+		case '\r':
+			if(user_ip_buf_ix == 0)
+			{
+				ASC_Asci_msg((int8 *const)ROM_Read_romstr(NO_FINAL_ASSY_REV_SN_IP_CHARS_MSG));
+				user_ip_buf_ix = 0;	//reset user input buf index
+				user_ip_max_chars = FINAL_SN_STRING_LEN;
+				MEN_Set_cmd_bk_func(ENTER_FINAL_ASSY_SN_MSG,Get_final_assy_sn);
+				return;
+			}
+			// else break to set next data input
+			break;
+		default:
+			if(Check_alpha_char(rx_byte))	//check for valid char
+			{
+				user_ip_buf[user_ip_buf_ix++] = rx_byte;
+				if(user_ip_buf_ix < user_ip_max_chars)
+					return;
+				else
+					break;
+			}
+			else
+			{
+				ASC_Asci_msg((int8 *const)ROM_Read_romstr(ALPHANUMERIC_CHARS_ONLY_MSG));
+				user_ip_buf_ix = 0;	//reset user input buf index
+				user_ip_max_chars = FINAL_SN_STRING_LEN;
+				MEN_Set_cmd_bk_func(ENTER_FINAL_ASSY_SN_MSG,Get_final_assy_sn);
+				return;
+			}
+		
+			break;
+	}
+	user_ip_buf[user_ip_buf_ix] = '\0'; // terminate string
+	strcpy((char *)final_assy_serial_no_str,(char *)user_ip_buf);	// copy string
+	// pad out WO string with 0's
+	for( ; user_ip_buf_ix < FINAL_SN_STRING_LEN; user_ip_buf_ix++)
+		final_assy_serial_no_str[user_ip_buf_ix] = '\0';
+
+	Display_final_assy_details();
+	MEN_Set_cmd_bk_func(PRESS_X_OR_PROCEED_MSG,Prog_final_assy_details);	
+
+}
+/*==================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+------------------------------------------------------------------*/
+static void Prog_final_assy_details(void)
+{
+	int8 rx_byte;
+
+	// get any RX chars *
+	rx_byte = Cmd_check(CMD_ECHO);
+	// return if none available
+	if(!rx_byte)
+		return;
+
+	// now process RX char
+	switch(rx_byte)
+	{
+		case 'X':
+		case 'x':
+			ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+			MEN_Set_cmd_bk_func(FSTART_MENU_MSG,Fstart_menu);
+			return;
+		case '\n':
+		case '\r':
+			break;
+		default:
+			ASC_Asci_msg(ROM_Read_romstr(INVALID_ENTRY_MSG));
+			MEN_Set_cmd_bk_func(PRESS_X_OR_PROCEED_MSG,Final_test_start_menu);
+			return;
+	}	
+	
+	ASC_Asci_msg(ROM_Read_romstr(NEWPAGE_MSG));
+
+	sprintf(tmpstr,"Programming Details\n\r");
+	ASC_Asci_msg(tmpstr);
+	MEN_Set_cmd_bk_func(NULL,NULL);
+	MAI_Set_power(ON);
+	TIM_Wait(100);
+	Display_formatted_assy_info();
+	MAI_Set_power(OFF);
+	
+	
+}
 /*********************************************************************
 *                       End of menu.c                                *
 *********************************************************************/
