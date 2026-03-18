@@ -45,7 +45,7 @@ Discarded input sections
  .text.ASC_Shutdown_asci
                 0x00000000        0x6 asci.o
  .text.ASC_Pause
-                0x00000000       0x2a asci.o
+                0x00000000       0x16 asci.o
  .progmem.data.pause_msg
                 0x00000000       0x26 asci.o
  .text          0x00000000        0x0 CFile1.o
@@ -76,6 +76,8 @@ Discarded input sections
                 0x00000000       0x38 menu.o
  .progmem.data.ENTER_BD_ASSY_NO_MSG
                 0x00000000       0x56 menu.o
+ .progmem.data.COPYRIGHT_MSG2
+                0x00000000      0x184 menu.o
  .progmem.data.DOT_MSG
                 0x00000000        0x2 menu.o
  .text          0x00000000        0x0 romdata.o
@@ -328,7 +330,7 @@ END GROUP
 .rela.plt
  *(.rela.plt)
 
-.text           0x00000000     0x3f6e
+.text           0x00000000     0x456c
  *(.vectors)
  .vectors       0x00000000       0x68 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
                 0x00000000                __vector_default
@@ -348,212 +350,240 @@ END GROUP
                 0x00000068        0x6 menu.o
                 0x00000068                ACCESS_CODE
  .progmem.data.PORT_EXPANDER_TEST_MSG
-                0x0000006e       0x6b menu.o
+                0x0000006e       0x75 menu.o
                 0x0000006e                PORT_EXPANDER_TEST_MSG
  .progmem.data.PORT_EXPANDER_DEBUG_MSG
-                0x000000d9       0x59 menu.o
-                0x000000d9                PORT_EXPANDER_DEBUG_MSG
+                0x000000e3       0x59 menu.o
+                0x000000e3                PORT_EXPANDER_DEBUG_MSG
  .progmem.data.DEBUG_MENU_MSG
-                0x00000132       0xe5 menu.o
-                0x00000132                DEBUG_MENU_MSG
+                0x0000013c       0xe2 menu.o
+                0x0000013c                DEBUG_MENU_MSG
  .progmem.data.EEPROM_DEBUG_MSG
-                0x00000217       0xd2 menu.o
-                0x00000217                EEPROM_DEBUG_MSG
+                0x0000021e       0xd3 menu.o
+                0x0000021e                EEPROM_DEBUG_MSG
  .progmem.data.NUMERIC_CHARS_ONLY_MSG
-                0x000002e9       0x46 menu.o
-                0x000002e9                NUMERIC_CHARS_ONLY_MSG
+                0x000002f1       0x46 menu.o
+                0x000002f1                NUMERIC_CHARS_ONLY_MSG
  .progmem.data.ALPHANUMERIC_CHARS_ONLY_MSG
-                0x0000032f       0x55 menu.o
-                0x0000032f                ALPHANUMERIC_CHARS_ONLY_MSG
+                0x00000337       0x55 menu.o
+                0x00000337                ALPHANUMERIC_CHARS_ONLY_MSG
  .progmem.data.EEPROM_READ_ERROR_MSG
-                0x00000384       0x21 menu.o
-                0x00000384                EEPROM_READ_ERROR_MSG
+                0x0000038c       0x21 menu.o
+                0x0000038c                EEPROM_READ_ERROR_MSG
  .progmem.data.DATA_RETENTION_BAD_MSG
-                0x000003a5       0x22 menu.o
-                0x000003a5                DATA_RETENTION_BAD_MSG
+                0x000003ad       0x22 menu.o
+                0x000003ad                DATA_RETENTION_BAD_MSG
  .progmem.data.DATA_RETENTION_OK_MSG
-                0x000003c7       0x17 menu.o
-                0x000003c7                DATA_RETENTION_OK_MSG
+                0x000003cf       0x17 menu.o
+                0x000003cf                DATA_RETENTION_OK_MSG
  .progmem.data.CHECKING_DATA_RETENTION_MSG
-                0x000003de       0x39 menu.o
-                0x000003de                CHECKING_DATA_RETENTION_MSG
+                0x000003e6       0x39 menu.o
+                0x000003e6                CHECKING_DATA_RETENTION_MSG
  .progmem.data.PCB_ASSY_SN_MSG
-                0x00000417       0x10 menu.o
-                0x00000417                PCB_ASSY_SN_MSG
+                0x0000041f       0x10 menu.o
+                0x0000041f                PCB_ASSY_SN_MSG
  .progmem.data.PCB_ASSY_PN_MSG
-                0x00000427       0x10 menu.o
-                0x00000427                PCB_ASSY_PN_MSG
+                0x0000042f       0x10 menu.o
+                0x0000042f                PCB_ASSY_PN_MSG
  .progmem.data.PRODUCT_SN_MSG
-                0x00000437       0x10 menu.o
-                0x00000437                PRODUCT_SN_MSG
+                0x0000043f       0x10 menu.o
+                0x0000043f                PRODUCT_SN_MSG
  .progmem.data.PRODUCT_PN_MSG
-                0x00000447       0x10 menu.o
-                0x00000447                PRODUCT_PN_MSG
+                0x0000044f       0x10 menu.o
+                0x0000044f                PRODUCT_PN_MSG
  .progmem.data.DATA_NOT_SET_MSG
-                0x00000457        0xa menu.o
-                0x00000457                DATA_NOT_SET_MSG
+                0x0000045f        0xa menu.o
+                0x0000045f                DATA_NOT_SET_MSG
  .progmem.data.CHECKSUM_MATCH_MSG
-                0x00000461       0x3c menu.o
-                0x00000461                CHECKSUM_MATCH_MSG
+                0x00000469       0x3c menu.o
+                0x00000469                CHECKSUM_MATCH_MSG
  .progmem.data.CHECKSUM_MISMATCH_MSG
-                0x0000049d       0x32 menu.o
-                0x0000049d                CHECKSUM_MISMATCH_MSG
+                0x000004a5       0x32 menu.o
+                0x000004a5                CHECKSUM_MISMATCH_MSG
  .progmem.data.CHECK_HEADER_MSG
-                0x000004cf       0x4f menu.o
-                0x000004cf                CHECK_HEADER_MSG
+                0x000004d7       0x4f menu.o
+                0x000004d7                CHECK_HEADER_MSG
  .progmem.data.NOT_ENOUGH_WO_NO_IP_CHARS_MSG
-                0x0000051e       0x4e menu.o
-                0x0000051e                NOT_ENOUGH_WO_NO_IP_CHARS_MSG
+                0x00000526       0x4e menu.o
+                0x00000526                NOT_ENOUGH_WO_NO_IP_CHARS_MSG
  .progmem.data.NO_FINAL_ASSY_REV_SN_IP_CHARS_MSG
-                0x0000056c       0x4a menu.o
-                0x0000056c                NO_FINAL_ASSY_REV_SN_IP_CHARS_MSG
+                0x00000574       0x4a menu.o
+                0x00000574                NO_FINAL_ASSY_REV_SN_IP_CHARS_MSG
  .progmem.data.NOT_ENOUGH_ASSY_REV_IP_CHARS_MSG
-                0x000005b6       0x46 menu.o
-                0x000005b6                NOT_ENOUGH_ASSY_REV_IP_CHARS_MSG
+                0x000005be       0x46 menu.o
+                0x000005be                NOT_ENOUGH_ASSY_REV_IP_CHARS_MSG
  .progmem.data.NOT_ENOUGH_ASSY_NO_IP_CHARS_MSG
-                0x000005fc       0x46 menu.o
-                0x000005fc                NOT_ENOUGH_ASSY_NO_IP_CHARS_MSG
+                0x00000604       0x46 menu.o
+                0x00000604                NOT_ENOUGH_ASSY_NO_IP_CHARS_MSG
  .progmem.data.BD_TEST_FAIL_MSG
-                0x00000642       0x6f menu.o
-                0x00000642                BD_TEST_FAIL_MSG
+                0x0000064a       0x6f menu.o
+                0x0000064a                BD_TEST_FAIL_MSG
  .progmem.data.BD_TEST_SUCCESS_MSG
-                0x000006b1       0x69 menu.o
-                0x000006b1                BD_TEST_SUCCESS_MSG
- .progmem.data.PORT_EXPANDER_TSET_FAILED_MSG
-                0x0000071a       0x4f menu.o
-                0x0000071a                PORT_EXPANDER_TSET_FAILED_MSG
+                0x000006b9       0x69 menu.o
+                0x000006b9                BD_TEST_SUCCESS_MSG
+ .progmem.data.PORT_EXPANDER_TEST_FAILED_MSG
+                0x00000722       0x54 menu.o
+                0x00000722                PORT_EXPANDER_TEST_FAILED_MSG
  .progmem.data.PROG_SUCCESS_MSG
-                0x00000769       0x31 menu.o
-                0x00000769                PROG_SUCCESS_MSG
+                0x00000776       0x31 menu.o
+                0x00000776                PROG_SUCCESS_MSG
  .progmem.data.PROG_EEPROM_MSG
-                0x0000079a       0x34 menu.o
-                0x0000079a                PROG_EEPROM_MSG
+                0x000007a7       0x34 menu.o
+                0x000007a7                PROG_EEPROM_MSG
  .progmem.data.CONNECT_ADAPTER_MSG
-                0x000007ce       0x61 menu.o
-                0x000007ce                CONNECT_ADAPTER_MSG
+                0x000007db       0x61 menu.o
+                0x000007db                CONNECT_ADAPTER_MSG
  .progmem.data.CONNECT_BD_MSG
-                0x0000082f       0x85 menu.o
-                0x0000082f                CONNECT_BD_MSG
+                0x0000083c       0x85 menu.o
+                0x0000083c                CONNECT_BD_MSG
  .progmem.data.ENTER_NEXT_SN_MSG
-                0x000008b4       0x27 menu.o
-                0x000008b4                ENTER_NEXT_SN_MSG
+                0x000008c1       0x27 menu.o
+                0x000008c1                ENTER_NEXT_SN_MSG
  .progmem.data.ENTER_SN_MSG
-                0x000008db       0x42 menu.o
-                0x000008db                ENTER_SN_MSG
+                0x000008e8       0x42 menu.o
+                0x000008e8                ENTER_SN_MSG
  .progmem.data.PRESS_X_OR_PROCEED_MSG
-                0x0000091d       0x2e menu.o
-                0x0000091d                PRESS_X_OR_PROCEED_MSG
+                0x0000092a       0x2e menu.o
+                0x0000092a                PRESS_X_OR_PROCEED_MSG
  .progmem.data.CHECK_DETAILS_MSG
-                0x0000094b       0x2f menu.o
-                0x0000094b                CHECK_DETAILS_MSG
+                0x00000958       0x2f menu.o
+                0x00000958                CHECK_DETAILS_MSG
  .progmem.data.ENTER_BD_ASSY_REV_MSG
-                0x0000097a       0x5f menu.o
-                0x0000097a                ENTER_BD_ASSY_REV_MSG
+                0x00000987       0x5f menu.o
+                0x00000987                ENTER_BD_ASSY_REV_MSG
  .progmem.data.ENTER_WO_MSG
-                0x000009d9       0x5d menu.o
-                0x000009d9                ENTER_WO_MSG
+                0x000009e6       0x5d menu.o
+                0x000009e6                ENTER_WO_MSG
  .progmem.data.NET_ADAPT_SELECTED_MSG
-                0x00000a36       0x27 menu.o
-                0x00000a36                NET_ADAPT_SELECTED_MSG
+                0x00000a43       0x27 menu.o
+                0x00000a43                NET_ADAPT_SELECTED_MSG
  .progmem.data.NET_CONN_SELECTED_MSG
-                0x00000a5d       0x29 menu.o
-                0x00000a5d                NET_CONN_SELECTED_MSG
+                0x00000a6a       0x29 menu.o
+                0x00000a6a                NET_CONN_SELECTED_MSG
  .progmem.data.SELECT_BD_MSG
-                0x00000a86       0xb7 menu.o
-                0x00000a86                SELECT_BD_MSG
+                0x00000a93       0xb7 menu.o
+                0x00000a93                SELECT_BD_MSG
  .progmem.data.START_MENU_MSG
-                0x00000b3d       0x5c menu.o
-                0x00000b3d                START_MENU_MSG
+                0x00000b4a       0x72 menu.o
+                0x00000b4a                START_MENU_MSG
+ .progmem.data.ASSY_NOT_DETECTED_MSG
+                0x00000bbc       0x2b menu.o
+                0x00000bbc                ASSY_NOT_DETECTED_MSG
+ .progmem.data.BD_TYPE_EXTENDER_MSG
+                0x00000be7       0x22 menu.o
+                0x00000be7                BD_TYPE_EXTENDER_MSG
+ .progmem.data.BD_TYPE_NET_CONN_MSG
+                0x00000c09       0x23 menu.o
+                0x00000c09                BD_TYPE_NET_CONN_MSG
+ .progmem.data.ASSY_TYPE_CONN_ADAPTER_MSG
+                0x00000c2c       0x2d menu.o
+                0x00000c2c                ASSY_TYPE_CONN_ADAPTER_MSG
+ .progmem.data.ASSY_TYPE_EXTENDER_MSG
+                0x00000c59       0x25 menu.o
+                0x00000c59                ASSY_TYPE_EXTENDER_MSG
+ .progmem.data.FINAL_ASSY_TEST_FAIL_MSG
+                0x00000c7e       0xc9 menu.o
+                0x00000c7e                FINAL_ASSY_TEST_FAIL_MSG
+ .progmem.data.ASSY_ID_TEST_FAILED_MSG
+                0x00000d47       0x54 menu.o
+                0x00000d47                ASSY_ID_TEST_FAILED_MSG
+ .progmem.data.CONNECT_LEGACY_ADAPTER_MSG
+                0x00000d9b       0x9d menu.o
+                0x00000d9b                CONNECT_LEGACY_ADAPTER_MSG
+ .progmem.data.CONNECT_FINAL_ASSY_TO_JIG_MSG
+                0x00000e38       0x39 menu.o
+                0x00000e38                CONNECT_FINAL_ASSY_TO_JIG_MSG
  .progmem.data.FINAL_ASSY_PROG_FAIL_MSG
-                0x00000b99       0xc9 menu.o
-                0x00000b99                FINAL_ASSY_PROG_FAIL_MSG
+                0x00000e71       0xc9 menu.o
+                0x00000e71                FINAL_ASSY_PROG_FAIL_MSG
  .progmem.data.PROG_SAME_FINAL_ASSY_MSG
-                0x00000c62      0x162 menu.o
-                0x00000c62                PROG_SAME_FINAL_ASSY_MSG
+                0x00000f3a      0x162 menu.o
+                0x00000f3a                PROG_SAME_FINAL_ASSY_MSG
+ .progmem.data.TEST_SAME_FINAL_ASSY_MSG
+                0x0000109c      0x17c menu.o
+                0x0000109c                TEST_SAME_FINAL_ASSY_MSG
  .progmem.data.ENTER_FINAL_ASSY_SN_MSG
-                0x00000dc4       0x53 menu.o
-                0x00000dc4                ENTER_FINAL_ASSY_SN_MSG
+                0x00001218       0x53 menu.o
+                0x00001218                ENTER_FINAL_ASSY_SN_MSG
  .progmem.data.ADAPTER_ASSY_MSG
-                0x00000e17       0x15 menu.o
+                0x0000126b       0x15 menu.o
  .progmem.data.EXTENSION_ASSY_MSG
-                0x00000e2c       0x17 menu.o
+                0x00001280       0x17 menu.o
  .progmem.data.NET_ASSY_MSG
-                0x00000e43        0xd menu.o
+                0x00001297        0xd menu.o
  .progmem.data.ENTER_FINAL_ASSY_REV_MSG
-                0x00000e50       0x3d menu.o
-                0x00000e50                ENTER_FINAL_ASSY_REV_MSG
+                0x000012a4       0x3d menu.o
+                0x000012a4                ENTER_FINAL_ASSY_REV_MSG
  .progmem.data.ENTER_FINAL_ASSY_NO_MSG
-                0x00000e8d       0x3a menu.o
-                0x00000e8d                ENTER_FINAL_ASSY_NO_MSG
+                0x000012e1       0x3a menu.o
+                0x000012e1                ENTER_FINAL_ASSY_NO_MSG
  .progmem.data.INVALID_ENTRY_MSG
-                0x00000ec7       0x26 menu.o
-                0x00000ec7                INVALID_ENTRY_MSG
+                0x0000131b       0x26 menu.o
+                0x0000131b                INVALID_ENTRY_MSG
  .progmem.data.FSTART_MENU_MSG
-                0x00000eed       0x82 menu.o
-                0x00000eed                FSTART_MENU_MSG
+                0x00001341       0x99 menu.o
+                0x00001341                FSTART_MENU_MSG
  .progmem.data.STORED_DETAILS_MSG
-                0x00000f6f       0x36 menu.o
-                0x00000f6f                STORED_DETAILS_MSG
+                0x000013da       0x36 menu.o
+                0x000013da                STORED_DETAILS_MSG
  .progmem.data.NET_ADAPT_PCB_MSG
-                0x00000fa5       0x10 menu.o
-                0x00000fa5                NET_ADAPT_PCB_MSG
+                0x00001410       0x10 menu.o
+                0x00001410                NET_ADAPT_PCB_MSG
  .progmem.data.NET_CONN_PCB_MSG
-                0x00000fb5       0x12 menu.o
-                0x00000fb5                NET_CONN_PCB_MSG
+                0x00001420       0x12 menu.o
+                0x00001420                NET_CONN_PCB_MSG
  .progmem.data.CMD_NOT_IMPLEMENTED_MSG
-                0x00000fc7       0x1b menu.o
+                0x00001432       0x1b menu.o
  .progmem.data.BD_TEST_JIG_MSG
-                0x00000fe2       0x31 menu.o
-                0x00000fe2                BD_TEST_JIG_MSG
+                0x0000144d       0x2e menu.o
+                0x0000144d                BD_TEST_JIG_MSG
  .progmem.data.INVALID_JIG_ID_MSG
-                0x00001013       0x2a menu.o
-                0x00001013                INVALID_JIG_ID_MSG
+                0x0000147b       0x2a menu.o
+                0x0000147b                INVALID_JIG_ID_MSG
  .progmem.data.FINAL_TEST_JIG_MSG
-                0x0000103d       0x2e menu.o
-                0x0000103d                FINAL_TEST_JIG_MSG
- .progmem.data.OPENING_MENU_MSG
-                0x0000106b       0x5f menu.o
-                0x0000106b                OPENING_MENU_MSG
- .progmem.data.COPYRIGHT_MSG
-                0x000010ca       0x3b menu.o
-                0x000010ca                COPYRIGHT_MSG
+                0x000014a5       0x2d menu.o
+                0x000014a5                FINAL_TEST_JIG_MSG
+ .progmem.data.COPYRIGHT_MSG1
+                0x000014d2       0xd0 menu.o
+                0x000014d2                COPYRIGHT_MSG1
  .progmem.data.NEWPAGE_MSG
-                0x00001105       0x11 menu.o
-                0x00001105                NEWPAGE_MSG
+                0x000015a2       0x11 menu.o
+                0x000015a2                NEWPAGE_MSG
  .progmem.data.NEWLINE_MSG
-                0x00001116        0x3 menu.o
-                0x00001116                NEWLINE_MSG
+                0x000015b3        0x3 menu.o
+                0x000015b3                NEWLINE_MSG
  .progmem.data.FW_PN
-                0x00001119       0x17 version.o
-                0x00001130                . = ALIGN (0x2)
+                0x000015b6       0x17 version.o
+                0x000015ce                . = ALIGN (0x2)
+ *fill*         0x000015cd        0x1 
  *(.jumptables)
  *(.jumptables*)
  *(.lowtext)
  *(.lowtext*)
-                0x00001130                __ctors_start = .
+                0x000015ce                __ctors_start = .
  *(.ctors)
-                0x00001130                __ctors_end = .
-                0x00001130                __dtors_start = .
+                0x000015ce                __ctors_end = .
+                0x000015ce                __dtors_start = .
  *(.dtors)
-                0x00001130                __dtors_end = .
+                0x000015ce                __dtors_end = .
  SORT(*)(.ctors)
  SORT(*)(.dtors)
  *(.init0)
- .init0         0x00001130        0x0 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
-                0x00001130                __init
+ .init0         0x000015ce        0x0 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
+                0x000015ce                __init
  *(.init0)
  *(.init1)
  *(.init1)
  *(.init2)
- .init2         0x00001130        0xc C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
+ .init2         0x000015ce        0xc C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
  *(.init2)
  *(.init3)
  *(.init3)
  *(.init4)
- .init4         0x0000113c       0x16 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_copy_data.o)
-                0x0000113c                __do_copy_data
- .init4         0x00001152       0x10 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_clear_bss.o)
-                0x00001152                __do_clear_bss
+ .init4         0x000015da       0x16 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_copy_data.o)
+                0x000015da                __do_copy_data
+ .init4         0x000015f0       0x10 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_clear_bss.o)
+                0x000015f0                __do_clear_bss
  *(.init4)
  *(.init5)
  *(.init5)
@@ -564,231 +594,240 @@ END GROUP
  *(.init8)
  *(.init8)
  *(.init9)
- .init9         0x00001162        0x8 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
+ .init9         0x00001600        0x8 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
  *(.init9)
  *(.text)
- .text          0x0000116a        0x4 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
-                0x0000116a                __vector_22
-                0x0000116a                __vector_1
-                0x0000116a                __vector_24
-                0x0000116a                __vector_12
-                0x0000116a                __bad_interrupt
-                0x0000116a                __vector_6
-                0x0000116a                __vector_3
-                0x0000116a                __vector_23
-                0x0000116a                __vector_25
-                0x0000116a                __vector_13
-                0x0000116a                __vector_17
-                0x0000116a                __vector_7
-                0x0000116a                __vector_5
-                0x0000116a                __vector_4
-                0x0000116a                __vector_9
-                0x0000116a                __vector_2
-                0x0000116a                __vector_21
-                0x0000116a                __vector_15
-                0x0000116a                __vector_8
-                0x0000116a                __vector_14
-                0x0000116a                __vector_10
-                0x0000116a                __vector_16
-                0x0000116a                __vector_20
-                0x0000116e                . = ALIGN (0x2)
+ .text          0x00001608        0x4 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.7.374/gcc/dev/atmega328p/avr5/crtatmega328p.o
+                0x00001608                __vector_22
+                0x00001608                __vector_1
+                0x00001608                __vector_24
+                0x00001608                __vector_12
+                0x00001608                __bad_interrupt
+                0x00001608                __vector_6
+                0x00001608                __vector_3
+                0x00001608                __vector_23
+                0x00001608                __vector_25
+                0x00001608                __vector_13
+                0x00001608                __vector_17
+                0x00001608                __vector_7
+                0x00001608                __vector_5
+                0x00001608                __vector_4
+                0x00001608                __vector_9
+                0x00001608                __vector_2
+                0x00001608                __vector_21
+                0x00001608                __vector_15
+                0x00001608                __vector_8
+                0x00001608                __vector_14
+                0x00001608                __vector_10
+                0x00001608                __vector_16
+                0x00001608                __vector_20
+                0x0000160c                . = ALIGN (0x2)
  *(.text.*)
  .text.ASC_Init_asci
-                0x0000116e       0x28 asci.o
-                0x0000116e                ASC_Init_asci
+                0x0000160c       0x28 asci.o
+                0x0000160c                ASC_Init_asci
  .text.__vector_19
-                0x00001196       0x5e asci.o
-                0x00001196                __vector_19
+                0x00001634       0x5e asci.o
+                0x00001634                __vector_19
  .text.ASC_Get_asci_tx_space
-                0x000011f4       0x22 asci.o
-                0x000011f4                ASC_Get_asci_tx_space
+                0x00001692       0x22 asci.o
+                0x00001692                ASC_Get_asci_tx_space
  .text.ASC_Asci_tx
-                0x00001216       0x82 asci.o
-                0x00001216                ASC_Asci_tx
+                0x000016b4       0x82 asci.o
+                0x000016b4                ASC_Asci_tx
  .text.ASC_Asci_msg
-                0x00001298       0x2a asci.o
-                0x00001298                ASC_Asci_msg
- .text.ASC_err  0x000012c2       0x4a asci.o
+                0x00001736       0x2a asci.o
+                0x00001736                ASC_Asci_msg
+ .text.ASC_err  0x00001760       0x4a asci.o
  .text.ASC_Asci_tx_empty
-                0x0000130c       0x10 asci.o
-                0x0000130c                ASC_Asci_tx_empty
+                0x000017aa       0x10 asci.o
+                0x000017aa                ASC_Asci_tx_empty
  .text.__vector_18
-                0x0000131c       0x86 asci.o
-                0x0000131c                __vector_18
+                0x000017ba       0x86 asci.o
+                0x000017ba                __vector_18
  .text.ASC_Asci_getchar
-                0x000013a2       0x3a asci.o
-                0x000013a2                ASC_Asci_getchar
+                0x00001840       0x3a asci.o
+                0x00001840                ASC_Asci_getchar
+ .text.ASC_Kbhit
+                0x0000187a       0x28 asci.o
+                0x0000187a                ASC_Kbhit
  .text.I2C_WaitForComplete
-                0x000013dc       0x26 i2c.o
+                0x000018a2       0x26 i2c.o
  .text.I2C_Init
-                0x00001402       0x12 i2c.o
-                0x00001402                I2C_Init
+                0x000018c8       0x12 i2c.o
+                0x000018c8                I2C_Init
  .text.I2C_Write
-                0x00001414       0x68 i2c.o
-                0x00001414                I2C_Write
+                0x000018da       0x68 i2c.o
+                0x000018da                I2C_Write
  .text.I2C_Read
-                0x0000147c       0x98 i2c.o
-                0x0000147c                I2C_Read
+                0x00001942       0x98 i2c.o
+                0x00001942                I2C_Read
+ .text.I2C_ping_addr
+                0x000019da       0x3e i2c.o
+                0x000019da                I2C_ping_addr
  .text.MAI_Set_power
-                0x00001514        0xc main.o
-                0x00001514                MAI_Set_power
- .text.InitIO   0x00001520       0x28 main.o
-                0x00001520                InitIO
+                0x00001a18        0xc main.o
+                0x00001a18                MAI_Set_power
+ .text.InitIO   0x00001a24       0x28 main.o
+                0x00001a24                InitIO
  .text.startup.main
-                0x00001548       0x1a main.o
-                0x00001548                main
+                0x00001a4c       0x1a main.o
+                0x00001a4c                main
  .text.MAI_Set_header_cntrl
-                0x00001562       0x1a main.o
-                0x00001562                MAI_Set_header_cntrl
+                0x00001a66       0x1a main.o
+                0x00001a66                MAI_Set_header_cntrl
  .text.MAI_Get_jig_id
-                0x0000157c       0x38 main.o
-                0x0000157c                MAI_Get_jig_id
+                0x00001a80       0x38 main.o
+                0x00001a80                MAI_Get_jig_id
  .text.MAI_Set_port_expander_code
-                0x000015b4       0x12 main.o
-                0x000015b4                MAI_Set_port_expander_code
+                0x00001ab8       0x12 main.o
+                0x00001ab8                MAI_Set_port_expander_code
  .text.Check_alpha_char
-                0x000015c6       0x22 menu.o
- .text.Display_assy_details
-                0x000015e8       0xc2 menu.o
+                0x00001aca       0x22 menu.o
  .text.Eeprom_write
-                0x000016aa       0xe0 menu.o
+                0x00001aec       0xe0 menu.o
  .text.Store_checksum
-                0x0000178a       0x32 menu.o
- .text.Cmd_check
-                0x000017bc       0x48 menu.o
- .text.Wait_for_x_or_enter
-                0x00001804       0x58 menu.o
- .text.Start_menu
-                0x0000185c       0xf6 menu.o
- .text.Port_expander_debug_menu
-                0x00001952      0x114 menu.o
- .text.Select_bd_menu
-                0x00001a66       0xcc menu.o
- .text.Get_wo_no
-                0x00001b32      0x11a menu.o
- .text.Get_assy_rev_no
-                0x00001c4c      0x102 menu.o
- .text.Fstart_menu
-                0x00001d4e       0xc8 menu.o
- .text.Get_final_assy_no
-                0x00001e16       0xee menu.o
+                0x00001bcc       0x32 menu.o
  .text.Test_msg_func
-                0x00001f04       0x82 menu.o
- .text.Display_final_assy_details
-                0x00001f86       0xba menu.o
- .text.Get_final_assy_rev_no
-                0x00002040      0x10c menu.o
- .text.Get_final_assy_sn
-                0x0000214c      0x118 menu.o
+                0x00001bfe       0x82 menu.o
+ .text.Rom_msg  0x00001c80       0x46 menu.o
  .text.Eeprom_read
-                0x00002264       0xbc menu.o
- .text.Get_stored_alpha_string
-                0x00002320       0x64 menu.o
+                0x00001cc6       0xb8 menu.o
  .text.Get_stored_checksum
-                0x00002384       0x38 menu.o
+                0x00001d7e       0x38 menu.o
  .text.Calc_stored_checksum
-                0x000023bc       0xa4 menu.o
+                0x00001db6       0xa4 menu.o
  .text.Prog_debug_details
-                0x00002460       0x8a menu.o
+                0x00001e5a       0x8a menu.o
  .text.Eeprom_fill
-                0x000024ea      0x118 menu.o
- .text.Get_stored_digit_string
-                0x00002602       0x50 menu.o
- .text.Display_formatted_assy_info
-                0x00002652      0x242 menu.o
- .text.Eeprom_debug_menu
-                0x00002894      0x3b0 menu.o
- .text.Get_serial_no
-                0x00002c44      0x140 menu.o
- .text.Start_eeprom_prog
-                0x00002d84      0x46a menu.o
+                0x00001ee4      0x118 menu.o
+ .text.Get_stored_alpha_string
+                0x00001ffc       0x64 menu.o
+ .text.Port_expander_test
+                0x00002060      0x16a menu.o
+ .text.Cmd_check
+                0x000021ca       0x44 menu.o
+ .text.Port_expander_debug_menu
+                0x0000220e      0x114 menu.o
+ .text.Wait_for_x_or_enter
+                0x00002322       0x54 menu.o
  .text.Debug_menu
-                0x000031ee      0x102 menu.o
+                0x00002376      0x12c menu.o
+ .text.Select_bd_menu
+                0x000024a2       0xce menu.o
+ .text.Get_wo_no
+                0x00002570      0x100 menu.o
+ .text.Display_assy_details
+                0x00002670       0xba menu.o
+ .text.Get_assy_rev_no
+                0x0000272a       0xe6 menu.o
+ .text.Get_final_assy_no
+                0x00002810       0xd4 menu.o
+ .text.Get_stored_digit_string
+                0x000028e4       0x50 menu.o
+ .text.Display_formatted_assy_info
+                0x00002934      0x216 menu.o
+ .text.Start_menu
+                0x00002b4a      0x18e menu.o
+ .text.Eeprom_debug_menu
+                0x00002cd8      0x394 menu.o
+ .text.Get_serial_no
+                0x0000306c      0x138 menu.o
+ .text.Start_eeprom_prog
+                0x000031a4      0x2d2 menu.o
+ .text.Fstart_menu
+                0x00003476      0x164 menu.o
+ .text.Display_final_assy_details
+                0x000035da       0xaa menu.o
+ .text.Get_final_assy_rev_no
+                0x00003684       0xec menu.o
+ .text.Get_final_assy_sn
+                0x00003770      0x104 menu.o
  .text.Bd_test_start_menu
-                0x000032f0       0x8c menu.o
+                0x00003874       0x82 menu.o
  .text.Connect_bd_menu
-                0x0000337c       0x6a menu.o
+                0x000038f6       0x66 menu.o
  .text.Final_test_start_menu
-                0x000033e6       0x8c menu.o
+                0x0000395c       0x82 menu.o
  .text.Prog_final_assy_details
-                0x00003472      0x168 menu.o
+                0x000039de      0x22e menu.o
  .text.Prog_same_final_assy_menu
-                0x000035da       0x98 menu.o
+                0x00003c0c       0x94 menu.o
  .text.Retry_prog_final_assy_menu
-                0x00003672       0x80 menu.o
+                0x00003ca0       0x78 menu.o
  .text.Get_secret_access_code
-                0x000036f2       0x70 menu.o
+                0x00003d18       0x70 menu.o
  .text.MEN_Init
-                0x00003762       0xb2 menu.o
-                0x00003762                MEN_Init
+                0x00003d88       0x8a menu.o
+                0x00003d88                MEN_Init
  .text.MEN_bkproc
-                0x00003814       0x10 menu.o
-                0x00003814                MEN_bkproc
+                0x00003e12       0x10 menu.o
+                0x00003e12                MEN_bkproc
  .text.ROM_Read_romdata
-                0x00003824       0x24 romdata.o
-                0x00003824                ROM_Read_romdata
+                0x00003e22       0x24 romdata.o
+                0x00003e22                ROM_Read_romdata
  .text.ROM_Romstrlen
-                0x00003848       0x18 romdata.o
-                0x00003848                ROM_Romstrlen
+                0x00003e46       0x18 romdata.o
+                0x00003e46                ROM_Romstrlen
  .text.ROM_Read_romstr
-                0x00003860       0x1a romdata.o
-                0x00003860                ROM_Read_romstr
+                0x00003e5e       0x1a romdata.o
+                0x00003e5e                ROM_Read_romstr
  .text.TIM_Init_timer
-                0x0000387a       0x16 Timer.o
-                0x0000387a                TIM_Init_timer
+                0x00003e78       0x16 Timer.o
+                0x00003e78                TIM_Init_timer
  .text.TIM_Set_delay
-                0x00003890       0x3e Timer.o
-                0x00003890                TIM_Set_delay
+                0x00003e8e       0x3e Timer.o
+                0x00003e8e                TIM_Set_delay
  .text.TIM_Get_delay_flag
-                0x000038ce       0x10 Timer.o
-                0x000038ce                TIM_Get_delay_flag
+                0x00003ecc       0x10 Timer.o
+                0x00003ecc                TIM_Get_delay_flag
  .text.TIM_Wait
-                0x000038de        0xe Timer.o
-                0x000038de                TIM_Wait
+                0x00003edc        0xe Timer.o
+                0x00003edc                TIM_Wait
  .text.__vector_11
-                0x000038ec       0x6e Timer.o
-                0x000038ec                __vector_11
+                0x00003eea       0x6e Timer.o
+                0x00003eea                __vector_11
  .text.VER_Get_sw_pn
-                0x0000395a        0x6 version.o
-                0x0000395a                VER_Get_sw_pn
+                0x00003f58        0x6 version.o
+                0x00003f58                VER_Get_sw_pn
  .text.avr-libc
-                0x00003960       0x16 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(strcat.o)
-                0x00003960                strcat
+                0x00003f5e       0x16 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(strcat.o)
+                0x00003f5e                strcat
  .text.avr-libc
-                0x00003976       0x12 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(strcmp.o)
-                0x00003976                strcmp
+                0x00003f74       0x12 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(strcmp.o)
+                0x00003f74                strcmp
  .text.avr-libc
-                0x00003988        0xe c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(strcpy.o)
-                0x00003988                strcpy
+                0x00003f86        0xe c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(strcpy.o)
+                0x00003f86                strcpy
  .text.avr-libc
-                0x00003996       0x44 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(sprintf.o)
-                0x00003996                sprintf
+                0x00003f94       0x44 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(sprintf.o)
+                0x00003f94                sprintf
  .text.avr-libc
-                0x000039da      0x3c2 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(vfprintf_std.o)
-                0x000039da                vfprintf
+                0x00003fd8      0x3c2 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(vfprintf_std.o)
+                0x00003fd8                vfprintf
  .text.avr-libc
-                0x00003d9c       0x16 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(strnlen_P.o)
-                0x00003d9c                strnlen_P
+                0x0000439a       0x16 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(strnlen_P.o)
+                0x0000439a                strnlen_P
  .text.avr-libc
-                0x00003db2       0x16 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(strnlen.o)
-                0x00003db2                strnlen
+                0x000043b0       0x16 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(strnlen.o)
+                0x000043b0                strnlen
  .text.avr-libc
-                0x00003dc8       0x78 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(fputc.o)
-                0x00003dc8                fputc
+                0x000043c6       0x78 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(fputc.o)
+                0x000043c6                fputc
  .text.avr-libc
-                0x00003e40       0xbc c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(ultoa_invert.o)
-                0x00003e40                __ultoa_invert
+                0x0000443e       0xbc c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/../../../../avr/lib/avr5\libc.a(ultoa_invert.o)
+                0x0000443e                __ultoa_invert
  .text.libgcc.prologue
-                0x00003efc       0x38 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_prologue.o)
-                0x00003efc                __prologue_saves__
+                0x000044fa       0x38 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_prologue.o)
+                0x000044fa                __prologue_saves__
  .text.libgcc.prologue
-                0x00003f34       0x36 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_epilogue.o)
-                0x00003f34                __epilogue_restores__
-                0x00003f6a                . = ALIGN (0x2)
+                0x00004532       0x36 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_epilogue.o)
+                0x00004532                __epilogue_restores__
+                0x00004568                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x00003f6a        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_exit.o)
-                0x00003f6a                _exit
-                0x00003f6a                exit
+ .fini9         0x00004568        0x0 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_exit.o)
+                0x00004568                _exit
+                0x00004568                exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -807,11 +846,11 @@ END GROUP
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x00003f6a        0x4 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_exit.o)
+ .fini0         0x00004568        0x4 c:/program files (x86)/atmel/studio/7.0/toolchain/avr8/avr8-gnu-toolchain/bin/../lib/gcc/avr/5.4.0/avr5\libgcc.a(_exit.o)
  *(.fini0)
-                0x00003f6e                _etext = .
+                0x0000456c                _etext = .
 
-.data           0x00800100      0x36c load address 0x00003f6e
+.data           0x00800100      0x350 load address 0x0000456c
                 0x00800100                PROVIDE (__data_start, .)
  *(.data)
  *(.data*)
@@ -824,94 +863,96 @@ END GROUP
  .rodata.str1.1
                 0x00800108       0x7e asci.o
  .rodata.str1.1
-                0x00800186      0x2dc menu.o
-                                0x302 (size before relaxing)
+                0x00800186      0x2c0 menu.o
+                                0x2e6 (size before relaxing)
  .rodata.pe_codes
-                0x00800462        0xa menu.o
+                0x00800446        0xa menu.o
  *(.gnu.linkonce.r*)
-                0x0080046c                . = ALIGN (0x2)
-                0x0080046c                _edata = .
-                0x0080046c                PROVIDE (__data_end, .)
+                0x00800450                . = ALIGN (0x2)
+                0x00800450                _edata = .
+                0x00800450                PROVIDE (__data_end, .)
 
-.bss            0x0080046c      0x213
-                0x0080046c                PROVIDE (__bss_start, .)
+.bss            0x00800450      0x214
+                0x00800450                PROVIDE (__bss_start, .)
  *(.bss)
  *(.bss*)
- .bss.rx_buf    0x0080046c        0xa asci.o
- .bss.tx_buf    0x00800476       0xb4 asci.o
+ .bss.rx_buf    0x00800450        0xa asci.o
+ .bss.tx_buf    0x0080045a       0xb4 asci.o
  .bss.tx_op_pos
-                0x0080052a        0x1 asci.o
+                0x0080050e        0x1 asci.o
  .bss.tx_ip_pos
-                0x0080052b        0x1 asci.o
+                0x0080050f        0x1 asci.o
  .bss.rx_op_pos
-                0x0080052c        0x1 asci.o
+                0x00800510        0x1 asci.o
  .bss.rx_ip_pos
-                0x0080052d        0x1 asci.o
- .bss.pe_count  0x0080052e        0x1 menu.o
- .bss.pe_code   0x0080052f        0x1 menu.o
+                0x00800511        0x1 asci.o
+ .bss.pe_count  0x00800512        0x1 menu.o
+ .bss.pe_code   0x00800513        0x1 menu.o
  .bss.cur_menu_msg
-                0x00800530        0x2 menu.o
+                0x00800514        0x2 menu.o
  .bss.final_assy_name
-                0x00800532        0x2 menu.o
+                0x00800516        0x2 menu.o
  .bss.final_assy_type
-                0x00800534        0x1 menu.o
- .bss.bd_id     0x00800535        0x1 menu.o
+                0x00800518        0x1 menu.o
+ .bss.bd_id     0x00800519        0x1 menu.o
  .bss.debug_flag
-                0x00800536        0x1 menu.o
+                0x0080051a        0x1 menu.o
  .bss.adapter_flag
-                0x00800537        0x1 menu.o
+                0x0080051b        0x1 menu.o
  .bss.cur_calc_checksum
-                0x00800538        0x2 menu.o
+                0x0080051c        0x2 menu.o
+ .bss.last_i2C_addr
+                0x0080051e        0x1 menu.o
  .bss.cur_i2C_addr
-                0x0080053a        0x1 menu.o
+                0x0080051f        0x1 menu.o
  .bss.formatted_assy_no_string
-                0x0080053b        0xd menu.o
+                0x00800520        0xd menu.o
  .bss.final_assy_rev_str
-                0x00800548        0x4 menu.o
+                0x0080052d        0x4 menu.o
  .bss.final_assy_no_str
-                0x0080054c        0x5 menu.o
+                0x00800531        0x5 menu.o
  .bss.final_assy_serial_no_str
-                0x00800551        0xd menu.o
+                0x00800536        0xd menu.o
  .bss.bd_serial_no_str
-                0x0080055e        0x4 menu.o
+                0x00800543        0x4 menu.o
  .bss.assy_rev_str
-                0x00800562        0x4 menu.o
+                0x00800547        0x4 menu.o
  .bss.assy_no_str
-                0x00800566        0x5 menu.o
+                0x0080054b        0x5 menu.o
  .bss.wo_no_str
-                0x0080056b        0xb menu.o
+                0x00800550        0xb menu.o
  .bss.user_ip_max_chars
-                0x00800576        0x1 menu.o
+                0x0080055b        0x1 menu.o
  .bss.user_ip_buf_ix
-                0x00800577        0x1 menu.o
+                0x0080055c        0x1 menu.o
  .bss.user_ip_buf
-                0x00800578       0x15 menu.o
+                0x0080055d       0x15 menu.o
  .bss.MEN_MSG_PTR
-                0x0080058d        0x2 menu.o
+                0x00800572        0x2 menu.o
  .bss.next_cmd_func
-                0x0080058f        0x2 menu.o
+                0x00800574        0x2 menu.o
  .bss.cmd_bk_func
-                0x00800591        0x2 menu.o
+                0x00800576        0x2 menu.o
  .bss.delay_flag
-                0x00800593        0x1 Timer.o
+                0x00800578        0x1 Timer.o
  .bss.delay_cnt
-                0x00800594        0x2 Timer.o
+                0x00800579        0x2 Timer.o
  .bss.set_delay
-                0x00800596        0x2 Timer.o
+                0x0080057b        0x2 Timer.o
  *(COMMON)
- COMMON         0x00800598       0x32 main.o
-                0x00800598                tmpstr
- COMMON         0x008005ca       0xb5 romdata.o
-                0x008005ca                rambuf
-                0x0080067f                PROVIDE (__bss_end, .)
-                0x00003f6e                __data_load_start = LOADADDR (.data)
-                0x000042da                __data_load_end = (__data_load_start + SIZEOF (.data))
+ COMMON         0x0080057d       0x32 main.o
+                0x0080057d                tmpstr
+ COMMON         0x008005af       0xb5 romdata.o
+                0x008005af                rambuf
+                0x00800664                PROVIDE (__bss_end, .)
+                0x0000456c                __data_load_start = LOADADDR (.data)
+                0x000048bc                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x0080067f        0x0
+.noinit         0x00800664        0x0
                 [!provide]                PROVIDE (__noinit_start, .)
  *(.noinit*)
                 [!provide]                PROVIDE (__noinit_end, .)
-                0x0080067f                _end = .
+                0x00800664                _end = .
                 [!provide]                PROVIDE (__heap_start, .)
 
 .eeprom         0x00810000        0x0

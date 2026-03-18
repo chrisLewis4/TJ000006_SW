@@ -50,7 +50,7 @@ extern int8 ASC_Asci_msg(int8 *msg);
 extern int8 ASC_Get_asci_tx_space(void);
 extern int8 ASC_Asci_tx_empty(void);
 extern void ASC_Pause(void);
-
+extern int16 ASC_Kbhit(void);
 /************************************************************************
 *						End of asci.h									*
 ************************************************************************/

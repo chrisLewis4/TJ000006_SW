@@ -57,7 +57,7 @@ char  *error_msgs[LAST_ASCI_ERR] =
 /* 						LOCAL FUNCTION PROTOTYPES 					*/
 /*==================================================================*/
 static void ASC_err(ASCIERRS err);
-static int16 Kbhit(void);
+
 
 /*==================================================================*/
 /*		LOCAL INITIALISED VARIABLES (initialized to 0 by default)	*/
@@ -336,7 +336,7 @@ Parameters	:
 Returns		:
 Description	:
 --------------------------------------------------------------------*/
-int16 Kbhit(void)
+int16 ASC_Kbhit(void)
 {
 	int8 c;
 	
@@ -354,7 +354,7 @@ Description	:
 void ASC_Pause(void)
 {
 	ASC_Asci_msg((int8 *const) ROM_Read_romstr(pause_msg));
-	while(!Kbhit());
+	while(!ASC_Kbhit());
 }
 /*********************************************************************
 *						End of asci.c								 *

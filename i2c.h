@@ -36,7 +36,7 @@
 #define I2C_RD_ADDR(addr)			((addr<<1)|I2C_RD_BIT)
 #define I2C_WR_ADDR(addr)			((addr<<1)&~(I2C_RD_BIT))
 
-
+#define I2C_VALID_ADDR 0x28
 /*==================================================================*/
 /*						LOCAL CONSTANT DEFINITIONS					*/
 /*==================================================================*/
@@ -53,6 +53,7 @@ extern void	I2C_Init(void);
 extern int8 I2C_Write(int8 addr, int8 byte_count,int8 *buf);
 extern void I2C_Read(int8 addr, int8 byte_count,int8 *buf);
 extern void I2C_Shutdown(void);
+extern int8 I2C_ping_addr(int8 i2c_addr);
 
 /************************************************************************
 *						End of I2C.h									*

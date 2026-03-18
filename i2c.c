@@ -196,6 +196,22 @@ static void I2C_Send(uint8_t data)
 	I2C_WaitForComplete();
 //	ASC_Asci_msg((int8 *)"\n\rDB 2c\n\r");
 }
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+int8 I2C_ping_addr(int8 i2c_addr)
+{
+	int8 c = 0x00;
+	I2C_Write(i2c_addr,1,&c);
+	if(I2C_Write(i2c_addr,1,&c) == I2C_VALID_ADDR) // ping addr
+		return TRUE;
+	else
+		return FALSE;
+}
+
 /*====================================================================
 Name		:
 Parameters	:
