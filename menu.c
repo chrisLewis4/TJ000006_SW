@@ -106,6 +106,7 @@ static void Prog_final_assy_details(void);
 static void Prog_same_final_assy_menu(void);
 static void Retry_prog_final_assy_menu(void);
 static void Get_secret_access_code(void);
+static void Net_id_menu(void);
 
 
 
@@ -164,10 +165,12 @@ typedef enum final_assy_types {NET_ASSY, EXTENSION_ASSY, ADAPTER_ASSY, LASTASSY_
 #define PORT_EXPAND_I2C_ADDR	0x41
 
 // define storage layout positions from TD6500006 Net Spec
-#define EEPROM_FINAL_PROD_NUM_LAYOUT_POS	0x00	//
-#define EEPROM_FINAL_PROD_CODE_LAYOUT_POS	0x04 // This will always be 00
-#define EEPROM_FINAL_PROD_REV_LAYOUT_POS	0x06
-#define EEPROM_FINAL_PROD_SN_LAYOUT_POS		0x09
+#define EEPROM_FINAL_PROD_NUM_LAYOUT_POS		0x00	//
+#define EEPROM_FINAL_PROD_CODE_LAYOUT_POS		0x04 // This will always be 00
+#define EEPROM_FINAL_PROD_REV_LAYOUT_POS		0x06
+#define EEPROM_FINAL_PROD_SN_LAYOUT_POS			0x09
+#define EEPROM_FINAL_PROD_NETID_LAYOUT_POS		0x22
+#define EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_POS	0x23
 
 #define EEPROM_ASSY_NUM_STRING_LAYOUT_POS	0xe2 // Full PCB assy num with null termination: xxxx-01-nny/0
 #define EEPROM_ASSY_WO_STRING_LAYOUT_POS	0xef
@@ -175,10 +178,12 @@ typedef enum final_assy_types {NET_ASSY, EXTENSION_ASSY, ADAPTER_ASSY, LASTASSY_
 #define EEPROM_CHECKSUM_LAYOUT_POS			0xfe
 
 // define storage layout sizes from TD6500006 Net Spec
-#define EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE	ASSY_STRING_LEN
-#define EEPROM_FINAL_PROD_CODE_LAYOUT_SIZE	2
-#define EEPROM_FINAL_PROD_REV_LAYOUT_SIZE	ASSY_REV_STRING_LEN
-#define EEPROM_FINAL_PROD_SN_LAYOUT_SIZE	(FINAL_SN_STRING_LEN+1)
+#define EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE		ASSY_STRING_LEN
+#define EEPROM_FINAL_PROD_CODE_LAYOUT_SIZE		2
+#define EEPROM_FINAL_PROD_REV_LAYOUT_SIZE		ASSY_REV_STRING_LEN
+#define EEPROM_FINAL_PROD_SN_LAYOUT_SIZE		(FINAL_SN_STRING_LEN+1)
+#define EEPROM_FINAL_PROD_NETID_LAYOUT_SIZE		1
+#define EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_SIZE	1
 
 #define EEPROM_ASSY_NUM_STRING_LAYOUT_SIZE	12	// Full PCB assy num with null termination: xxxx-01-nny/0
 #define EEPROM_ASSY_WO_STRING_LAYOUT_SIZE		(MAX_WO_STRING_LEN+1)	// Null terminated string padded with 0's
@@ -255,6 +260,53 @@ int8 const ENTER_FINAL_ASSY_SN_MSG[] PROGMEM =
 	"Enter the Serial no. of the Final Assembly under test\n\r(MAX = 12 Characters)\n\r"
 };
 
+int8 const SELECT_NET_ID_MSG[] PROGMEM =
+{
+	"\n\n\n\r"
+	"Select the Net Size ID from the following list\n\n\r"
+	"    ID                DESCRIPTION\n\r"
+	"-----------------------------------------------------\n\r"
+	"0 - 0  64  Channel Geodesic Sensor Nets 2.x\n\r"
+	"1 - 1  128 Channel Geodesic Sensor Nets 2.x\n\r"
+	"2 - 2  256 Channel Geodesic Sensor Nets 2.x\n\r"
+	"3 - 3  32  Channel Hydrocel Geodesic Sensor Nets 1.0\n\r"
+	"4 - 4  64  Channel Hydrocel Geodesic Sensor Nets 1.0\n\r"
+	"5 - 5  128 Channel Hydrocel Geodesic Sensor Nets 1.0\n\r"
+	"6 - 6  256 Channel Hydrocel Geodesic Sensor Nets 1.0\n\r"
+	"7 - 7  32  Channel Microcel Geodesic Sensor Nets 1.0\n\r"
+	"8 - 8  64  Channel Microcel Geodesic Sensor Nets 1.0\n\r"
+	"9 - 9  128 Channel Microcel Geodesic Sensor Nets 1.0\n\r"
+	"a - 10 256 Channel Microcel Geodesic Sensor Nets 1.0\n\r"
+};
+int8 const NET_ID0_MSG[] PROGMEM = {"0: 64 Channel Geodesic Sensor Nets 2.x"};
+int8 const NET_ID1_MSG[] PROGMEM = {"1: 128 Channel Geodesic Sensor Nets 2.x"};
+int8 const NET_ID2_MSG[] PROGMEM = {"2: 256 Channel Geodesic Sensor Nets 2.x"};
+int8 const NET_ID3_MSG[] PROGMEM = {"3: 32 Channel Hydrocel Geodesic Sensor Nets 1.0"};
+int8 const NET_ID4_MSG[] PROGMEM = {"4: 64 Channel Hydrocel Geodesic Sensor Nets 1.0"};
+int8 const NET_ID5_MSG[] PROGMEM = {"5: 128 Channel Hydrocel Geodesic Sensor Nets 1.0"};
+int8 const NET_ID6_MSG[] PROGMEM = {"6: 256 Channel Hydrocel Geodesic Sensor Nets 1.0"};
+int8 const NET_ID7_MSG[] PROGMEM = {"7: 32 Channel Microcel Geodesic Sensor Nets 1.0"};
+int8 const NET_ID8_MSG[] PROGMEM = {"8: 64 Channel Microcel Geodesic Sensor Nets 1.0"};
+int8 const NET_ID9_MSG[] PROGMEM = {"9: 128 Channel Microcel Geodesic Sensor Nets 1.0"};
+int8 const NET_ID10_MSG[] PROGMEM = {"10: 256 Channel Microcel Geodesic Sensor Nets 1.0"};
+
+static int8 const *net_id_list[11] = 
+{
+	NET_ID0_MSG,
+	NET_ID1_MSG,
+	NET_ID2_MSG,
+	NET_ID3_MSG,
+	NET_ID4_MSG,
+	NET_ID5_MSG,
+	NET_ID6_MSG,
+	NET_ID7_MSG,
+	NET_ID9_MSG,
+	NET_ID9_MSG,
+	NET_ID10_MSG,
+};
+// chan count list NOTE: value is chan count -1 
+static int8 chan_count_list[11] = {63,127,255,31,63,127,255,31,63,127,255};	
+
 int8 const TEST_SAME_FINAL_ASSY_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
@@ -262,17 +314,6 @@ int8 const TEST_SAME_FINAL_ASSY_MSG[] PROGMEM =
 	"*** Final Assembly successfully Programmed and Tested ***\n\r"
 	"*********************************************************\n\n\r"
 	"Check the detail shown above are correct\n\r"
-	"Remove Tested Assembly and complete the necessary Paperwork\n\n\r"
-	"Press 'ENTER' to program a Final assembly of the same type\n\r"
-	"Press 'X' to exit to start menu\n\r"
-};
-int8 const COPYRIGHT_MSG2[] PROGMEM =
-{
-	"\n\n\n\r"
-	"*********************************************************\n\r"
-	"*** Final Assembly successfully Programmed and Tested ***\n\r"
-	"*********************************************************\n\n\r"
-	"Check the detail shown on the screen are correct\n\r"
 	"Remove Tested Assembly and complete the necessary Paperwork\n\n\r"
 	"Press 'ENTER' to program a Final assembly of the same type\n\r"
 	"Press 'X' to exit to start menu\n\r"
@@ -637,6 +678,8 @@ static JIG_ID_ENUM bd_id;
 //define Final Assy type
 static FINAL_ASSY_TYPES final_assy_type;
 static int8 const *final_assy_name;
+static int8 net_id;
+static int8 extender_flag;
 
 /*********************************************************************
 *                               FUNCTIONS                            *
@@ -861,6 +904,7 @@ static void Start_menu(void)
 		case 'V':
 		case 'v':
 			Rom_msg(NEWPAGE_MSG);
+			extender_flag = FALSE;
 			MAI_Set_power(ON);
 			TIM_Wait(100);
 			cur_i2C_addr = EEPROM_ADDR_LO;
@@ -869,7 +913,10 @@ static void Start_menu(void)
 			{
 				cur_i2C_addr = EEPROM_ADDR_HI;	// no response so set Hi addr
 				if(I2C_ping_addr(cur_i2C_addr))
-				msg = ROM_Read_romstr(BD_TYPE_EXTENDER_MSG);
+				{
+					extender_flag = TRUE;
+					msg = ROM_Read_romstr(BD_TYPE_EXTENDER_MSG);
+				}
 				else
 				{
 					Rom_msg(ASSY_NOT_DETECTED_MSG);
@@ -1903,7 +1950,8 @@ static int8 Check_alpha_char(int8 c)
 
 static void	Display_formatted_assy_info(void)
 {
-	int8 *ptr, *ptr1, tmp[EEPROM_BD_ASSY_SN_STRING_LAYOUT_SIZE];
+	int8 *ptr, *ptr1, data_set_flag, tmp[EEPROM_BD_ASSY_SN_STRING_LAYOUT_SIZE];
+	
 	// Now display contents and checksum & status
 	//*******************************************
 	Rom_msg(NEWLINE_MSG);	// newline
@@ -1921,6 +1969,7 @@ static void	Display_formatted_assy_info(void)
 	while(!ASC_Asci_tx_empty());
 	Rom_msg(PRODUCT_PN_MSG);	// display Product Code message
 	ptr = (int8 *)ROM_Read_romstr(DATA_NOT_SET_MSG);
+	data_set_flag = FALSE;
 	if(Get_stored_digit_string(EEPROM_FINAL_PROD_NUM_LAYOUT_POS,EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE,tmpstr))
 	{
 		ptr1 = tmpstr + EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE;
@@ -1933,12 +1982,30 @@ static void	Display_formatted_assy_info(void)
 			{
 				*(ptr1 + EEPROM_FINAL_PROD_REV_LAYOUT_SIZE) = '\0';
 				ptr = tmpstr;
+				data_set_flag = TRUE;
 			}
 		}
 	}
 	ASC_Asci_msg(ptr);
 	Rom_msg(NEWLINE_MSG);	// Newline
-	
+
+	if(data_set_flag)
+	{	
+		// Display Net ID
+		Eeprom_read(cur_i2C_addr,EEPROM_FINAL_PROD_NETID_LAYOUT_POS,EEPROM_FINAL_PROD_NETID_LAYOUT_SIZE,tmp);
+		if(*tmp == 128)
+			ptr = ROM_Read_romstr(ADAPTER_ASSY_MSG);
+		else if(extender_flag)
+			ptr = ROM_Read_romstr(EXTENSION_ASSY_MSG);
+		else
+			ptr = ROM_Read_romstr(net_id_list[net_id]);
+	}
+	else
+		ptr = (int8 *)ROM_Read_romstr(DATA_NOT_SET_MSG);
+
+	sprintf((char *)tmpstr,"NET ID       = %s\n\r",ptr);
+	ASC_Asci_msg(tmpstr);
+
 	//Now display Product S/N.
 	while(!ASC_Asci_tx_empty());
 	Rom_msg(PRODUCT_SN_MSG);	// display Product SN message
@@ -2184,18 +2251,24 @@ static void Fstart_menu(void)
 		case '1':
 			final_assy_type = NET_ASSY;
 			final_assy_name = NET_ASSY_MSG;
+			adapter_flag = FALSE;
+			extender_flag = FALSE;
 			MAI_Set_header_cntrl(OP,LO);
 			cur_i2C_addr = EEPROM_ADDR_LO;
 			break;
 		case '2':
 			final_assy_type = EXTENSION_ASSY;
 			final_assy_name = EXTENSION_ASSY_MSG;
+			adapter_flag = FALSE;
+			extender_flag = TRUE;
 			MAI_Set_header_cntrl(OP,HI);
 			cur_i2C_addr = EEPROM_ADDR_HI;
 			break;
 		case '3':
 			final_assy_type = ADAPTER_ASSY;
 			final_assy_name = ADAPTER_ASSY_MSG;
+			adapter_flag = TRUE;
+			extender_flag = FALSE;
 			MAI_Set_header_cntrl(OP,LO);
 			cur_i2C_addr = EEPROM_ADDR_LO;
 			break;
@@ -2210,7 +2283,10 @@ static void Fstart_menu(void)
 			{
 				cur_i2C_addr = EEPROM_ADDR_HI;	// no response so set Hi addr
 				if(I2C_ping_addr(cur_i2C_addr))
+				{
 					msg = ROM_Read_romstr(ASSY_TYPE_EXTENDER_MSG);
+					extender_flag = TRUE;
+				}
 				else
 				{
 					Rom_msg(ASSY_NOT_DETECTED_MSG);
@@ -2389,6 +2465,47 @@ static void Get_final_assy_rev_no(void)
 	// Display entered data
 	Rom_msg(NEWPAGE_MSG);
 	final_assy_serial_no_str[0] = '\0'; //reset SN
+	if(adapter_flag || extender_flag)
+	{
+		if(adapter_flag)	
+			net_id = 128;
+		else
+			net_id = 0;
+
+		Display_final_assy_details();
+		MEN_Set_cmd_bk_func(PRESS_X_OR_PROCEED_MSG,Final_test_start_menu);
+		return;
+
+	}
+	MEN_Set_cmd_bk_func(SELECT_NET_ID_MSG,Net_id_menu);
+}
+//====================================================================
+// Name			:
+// Parameters	:
+// Returns		:
+// Description	:
+//--------------------------------------------------------------------
+static void Net_id_menu(void)
+{
+	int8 rx_byte;
+
+	/* get any RX chars */
+	rx_byte = Cmd_check(CMD_ECHO);
+	/* return if none available */
+	if(!rx_byte)
+		return;
+
+	if(rx_byte >= 0x30 && rx_byte <= 0x39)
+		net_id = rx_byte - 0x30;
+	else if(rx_byte == 'a' || rx_byte == 'A')
+		net_id = 0x0a;
+	else
+	{
+		Rom_msg(INVALID_ENTRY_MSG);
+		MEN_Set_cmd_bk_func(SELECT_NET_ID_MSG,Net_id_menu);
+		return;
+	}		
+			
 	Display_final_assy_details();
 	MEN_Set_cmd_bk_func(PRESS_X_OR_PROCEED_MSG,Final_test_start_menu);
 }
@@ -2404,8 +2521,16 @@ static void Display_final_assy_details(void)
 	Rom_msg(CHECK_DETAILS_MSG);
 	sprintf((char *)tmpstr,"Final Assembly Type: %s\n\r",ROM_Read_romstr(final_assy_name));
 	ASC_Asci_msg(tmpstr);
-	sprintf((char *)tmpstr,"Final Assembly Number: %s-00-%s\n\n\r",final_assy_no_str,final_assy_rev_str);
-	ASC_Asci_msg(tmpstr);	
+	sprintf((char *)tmpstr,"Final Assembly Number: %s-00-%s\n\r",final_assy_no_str,final_assy_rev_str);
+	ASC_Asci_msg(tmpstr);
+	if(adapter_flag)
+		sprintf((char *)tmpstr,"Net ID: ADAPTER\n\n\r");
+	else if(extender_flag)
+		sprintf((char *)tmpstr,"Net ID: EXTENDER\n\n\r");
+	else		
+		sprintf((char *)tmpstr,"Net ID: %s\n\n\r",ROM_Read_romstr(net_id_list[net_id]));
+	ASC_Asci_msg(tmpstr);
+	
 	if(final_assy_serial_no_str[0] != '\0')
 	{
 		sprintf((char *)tmpstr,"Serial No: %s\n\n\r", final_assy_serial_no_str);
@@ -2584,7 +2709,14 @@ static void Prog_final_assy_details(void)
 	Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_REV_LAYOUT_POS,EEPROM_FINAL_PROD_REV_LAYOUT_SIZE,final_assy_rev_str ); // Store PCB assy number, code and rev
 	// Store Prod SN
 	Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_SN_LAYOUT_POS,EEPROM_FINAL_PROD_SN_LAYOUT_SIZE,final_assy_serial_no_str ); // Store PCB assy number, code and rev
-
+	// Store net ID
+	Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_NETID_LAYOUT_POS,EEPROM_FINAL_PROD_NETID_LAYOUT_SIZE,&net_id); // Store NET ID
+	// store chan count according to type
+	if(adapter_flag || extender_flag)
+		Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_POS,EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_SIZE,0); // Store chan count = 0 if adapter
+	else
+		Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_POS,EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_SIZE,&chan_count_list[net_id]); // Store chan count according to type
+	
 	// calc current EEPROM checksum
 	cur_calc_checksum = Calc_stored_checksum();
 	// store new checksum
@@ -2635,7 +2767,7 @@ static void Prog_final_assy_details(void)
 	}
 	cur_i2C_addr = last_i2C_addr;
 	MEN_Set_cmd_bk_func(PROG_SAME_FINAL_ASSY_MSG,Prog_same_final_assy_menu);
-	Display_final_assy_details();
+	//Display_final_assy_details();
 	
 	
 }
