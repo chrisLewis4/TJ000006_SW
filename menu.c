@@ -1489,24 +1489,30 @@ static void Debug_menu(void)
 	int8 rx_byte;
 	
 	MAI_Set_power(ON);
+	MAI_Set_header_cntrl(IP,LO);
+
 	/* get rx char */
 	rx_byte = Cmd_check(CMD_ECHO);
 	/* check for valid rx char */
 	if(!rx_byte)
-	return;
+		return;
 	/* process rx char */
 	switch(rx_byte)
 	{
 		case '1':
+			MAI_Set_header_cntrl(OP,LO);
 			cur_i2C_addr = NET_CONN_I2C_ADDR;
 			break;
 		case '2':
+			MAI_Set_header_cntrl(OP,LO);
 			cur_i2C_addr = ADC_BOT_I2C_ADDR;
 			break;
 		case '3':
+			MAI_Set_header_cntrl(OP,HI);
 			cur_i2C_addr = NET_EXTEND_I2C_ADDR;
 			break;
 		case '4':
+			MAI_Set_header_cntrl(OP,HI);
 			cur_i2C_addr = ADC_BOT_I2C_ADDR;
 			break;
 		case '5':
