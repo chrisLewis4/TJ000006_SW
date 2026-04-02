@@ -113,10 +113,10 @@ typedef enum board_under_test {IFACE_BD, ROTOR_BD, COIL_MEM_BD, COIL_SC_BD, COIL
 BUT MAI_Get_but(void);
 void MAI_Set_but(BUT But);
 
-#define DEBUG_BIT BIT3
+#define DEBUG_BIT BIT0
 
-#define DEBUG_HI (PORTD |= DEBUG_BIT)
-#define DEBUG_LO (PORTD &= ~DEBUG_BIT)
+#define DEBUG_HI (PORTC |= DEBUG_BIT)
+#define DEBUG_LO (PORTC &= ~DEBUG_BIT)
 
 /************************************************************************
 *						End of ATMtypes.h								*

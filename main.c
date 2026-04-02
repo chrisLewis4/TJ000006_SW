@@ -97,14 +97,14 @@ Description	:
 
 void InitIO(void)
 {
-	PORTD = TJ_ID_BIT; // Enable pull up for TJ ID Bit
+	PORTD = TJ_ID_BIT | ADAPTER_NOT_DETECTED_BIT; // Enable pull up for TJ ID Bit, and Hypertronics Adapter
 	// Define and set DEBUG pin at PORTD bit 2 (Pin 20)
-	DDRD |= (DEBUG_BIT|PORT_EXPANDER_GSN3_BIT|PORT_EXPANDER_GSN2_BIT|PORT_EXPANDER_GSN1_BIT|PORT_EXPANDER_GSN0_BIT); // Ensure PORTD Bit 3 is set as Output
+	DDRD |= (PORT_EXPANDER_GSN3_BIT|PORT_EXPANDER_GSN2_BIT|PORT_EXPANDER_GSN1_BIT|PORT_EXPANDER_GSN0_BIT); // Ensure PORTD Bit 3 is set as Output
 	PORT_EXPANDER_GSN_PORT = (PORT_EXPANDER_GSN_PORT & 0x0f);
+	DDRC |= DEBUG_BIT;
 	
-	
-	//Define Test Jig ID Port and Bit (PORTD Bit 3 (Pin 21)
-	DDRD &= ~TJ_ID_BIT; // Ensure PORTD Bit 3 is set as input
+	//Define Test Jig ID Port and Bit (PORTD Bit 3 (Pin 21) & External Hypertronics Adapter detect bit
+	DDRD &= ~(TJ_ID_BIT| ADAPTER_NOT_DETECTED_BIT); // Ensure PORTD Bit 2 & 3 are set as inputs
 	
 	DEBUG_LO;
 	DEBUG_HI;
@@ -142,7 +142,10 @@ int8 MAI_Set_header_cntrl(IPOP_ENUM ipop_stat, HILO_ENUM hilo_stat)
 {
 	// Check if header control is input
 	if(ipop_stat == IP)
+	{
 		DDRB &= ~HEADER_CONFIG_BIT; // Set for input
+		PORTB &= ~HEADER_CONFIG_BIT; // disable pull-up
+	}
 	else
 	{	// config is output
 		DDRB |= HEADER_CONFIG_BIT; // set for output
@@ -191,15 +194,25 @@ Description	:
 --------------------------------------------------------------------*/
 void MAI_Set_port_expander_code(int8 code)
 {
-/*
-	int8 tmp;
-	tmp = PORT_EXPANDER_GSN_PORT;
-	tmp = tmp & 0x0f;
-	tmp = tmp | ((code << 4) & 0xf0);
-	PORT_EXPANDER_GSN_PORT = tmp; 
-*/
-	PORT_EXPANDER_GSN_PORT = (PORT_EXPANDER_GSN_PORT & 0x0f) | ((code << 4) & 0xf0);
 
+	PORT_EXPANDER_GSN_PORT = (PORT_EXPANDER_GSN_PORT & 0x0f) | ((code << 4) & (0xf0 | ADAPTER_NOT_DETECTED_BIT)); // sets code on PORTD and Ensure BIT3 pull-up is enabled
+
+}
+/*====================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+--------------------------------------------------------------------*/
+int8 MAI_Check_adapter_fitted(void)
+{
+	int8 id;
+	
+	id = PIND & ADAPTER_NOT_DETECTED_BIT;
+	if(id)
+		return FALSE;
+	else
+		return TRUE;
 }
 /*********************************************************************
 *						End of main.c								 *

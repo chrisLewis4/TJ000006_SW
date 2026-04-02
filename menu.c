@@ -372,11 +372,17 @@ int8 const FINAL_ASSY_TEST_FAIL_MSG[] PROGMEM =
 	"Press 'X' to exit to start menu\n\r"	
 };
 
+int8 const HYPER_ADAPTER_NOT_FITTED_MSG[] PROGMEM =
+{
+	"\n\n\n\rHYPERTRONICS Adapter NOT fitted\n\r"
+	"Fit adapter and then retry\n\n\r"	
+};
 
 int8 const ASSY_TYPE_EXTENDER_MSG[] PROGMEM =
 {
 	"\n\n\n\rAssembly Type is NET EXTENDER\n\n\r"
 };
+
 int8 const ASSY_TYPE_CONN_ADAPTER_MSG[] PROGMEM =
 {
 	"\n\n\n\rAssembly Type is NET CONNECTOR/ADAPTER\n\r"
@@ -620,7 +626,7 @@ int8 const DEBUG_MENU_MSG[] PROGMEM =
 	"2 - 0x52: ADC Bottom Bd\n\r"
 	"3 - 0x54: Net Extension\n\r"
 	"4 - 0x56: ADC Top Bd\n\r"
-	"5 - 0x41: Port Expander (HW000112 Only)\n\r"	
+	"5 - 0x41: Port Expander (6768-01 Only)\n\r"	
 	"\n\rPress X to exit\n\n\r"
 };
 
@@ -2271,6 +2277,12 @@ static void Fstart_menu(void)
 			cur_i2C_addr = EEPROM_ADDR_HI;
 			break;
 		case '3':
+			if(!MAI_Check_adapter_fitted())
+			{
+				Rom_msg(HYPER_ADAPTER_NOT_FITTED_MSG);
+				MEN_Set_cmd_bk_func(FSTART_MENU_MSG,Fstart_menu);
+				return;
+			}
 			final_assy_type = ADAPTER_ASSY;
 			final_assy_name = ADAPTER_ASSY_MSG;
 			adapter_flag = TRUE;
