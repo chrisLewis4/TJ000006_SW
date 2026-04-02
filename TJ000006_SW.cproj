@@ -154,7 +154,10 @@
     <Compile Include="ATMtypes.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="CFile1.c">
+    <Compile Include="eeprom.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="eeprom.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="i2c.c">
@@ -176,6 +179,12 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="menu.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="menumsg.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="menumsg.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="romdata.c">

@@ -22,7 +22,7 @@
 /*						LOCAL CONSTANT DEFINITIONS					*/
 /*==================================================================*/
 
-static int8 const FW_PN[] PROGMEM = {"TJ000006_SW - Ver B1.5"};
+static int8 const FW_PN[] PROGMEM = {"TJ000006_SW - Ver B1.5a"};
 
 /*==================================================================*/
 /*		LOCAL INITIALISED VARIABLES (initialised to 0 by default)	*/

@@ -4,13 +4,15 @@
 
 asci.c
 
-CFile1.c
+eeprom.c
 
 i2c.c
 
 main.c
 
 menu.c
+
+menumsg.c
 
 romdata.c
 

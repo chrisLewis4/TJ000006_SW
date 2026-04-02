@@ -5,6 +5,11 @@ VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "TJ000006_SW", "TJ000006_SW.cproj", "{C3C6674C-1D15-40A6-815E-EBF382DC3FD7}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DF92CFB3-69BB-473A-AF4E-8F3E918E03E5}"
+	ProjectSection(SolutionItems) = preProject
+		menumsg.c = menumsg.c
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|AVR = Debug|AVR

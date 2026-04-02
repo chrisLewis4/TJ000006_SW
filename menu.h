@@ -34,6 +34,7 @@ extern int8 const START_MENU_MSG[];
 /*======================================================================*/
 extern void MEN_Init(void);
 extern void MEN_bkproc(void);
+extern void MEN_Rom_msg(const int8 *MSG_PTR);
 
 extern void MEN_Test_bkproc(void);
 extern void MEN_Shutdown_test(void);
@@ -42,6 +43,7 @@ extern int8 MEN_Test_active(void);
 extern void MEN_Set_cmd_bk_func(const int8 *MSG_PTR, void * const next_cmd_ptr);
 
 extern void MEN_Test_start_menu(void);
+
 
 
 /************************************************************************
