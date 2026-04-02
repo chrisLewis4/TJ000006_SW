@@ -9,8 +9,16 @@
 #ifndef MENUMSG_H_
 #define MENUMSG_H_
 
+extern int8 const NEWPAGE_MSG[];
+extern int8 const COPYRIGHT_MSG[];
+extern int8 const FIRMWARE_ID_MSG[];
+extern int8 const CHECKSUM_MSG[];
+extern int8 const HARDWARE_ID_MSG[];
+extern int8 const NEWLINE_MSG[];
+extern int8 const DEBUG_MENU_MSG[];
+extern int8 const START_MENU_MSG[];
+
 // Opening Menu Msgs
-extern int8 const COPYRIGHT_MSG1[];
  
 extern int8 const FINAL_TEST_JIG_MSG[];
 extern int8 const INVALID_JIG_ID_MSG[];

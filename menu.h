@@ -20,13 +20,6 @@
 /*                      PUBLIC Messages				                    */
 /*======================================================================*/
 
-extern int8 const COPYRIGHT_MSG[];
-extern int8 const FIRMWARE_ID_MSG[];
-extern int8 const CHECKSUM_MSG[];
-extern int8 const HARDWARE_ID_MSG[];
-extern int8 const NEWLINE_MSG[];
-extern int8 const DEBUG_MENU_MSG[];
-extern int8 const START_MENU_MSG[];
 
 /*======================================================================*/
 /*                      PUBLIC FUNCTION PROTOTYPES                      */

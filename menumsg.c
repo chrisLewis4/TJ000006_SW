@@ -9,12 +9,16 @@
 #include "romdata.h"
 #include <avr/pgmspace.h>
 
+int8 const NEWLINE_MSG[] PROGMEM =		{"\n\r"};
+int8 const NEWPAGE_MSG[] PROGMEM =		{"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\r"};
+int8 const DOT_MSG[] PROGMEM =		{"."};
+	
 // Opening Menu Msgs
- int8 const COPYRIGHT_MSG1[] PROGMEM =	
+ int8 const COPYRIGHT_MSG[] PROGMEM =	
  {
-	 "**********************************************\n\r"
+  "**********************************************\n\r"
   "| Copyright(c) 2026 The Magstim Company Ltd. | \n\r"
-  "|   EEG Net Connector - I2C Test Firmware    |\n\r"
+  "| EEG Net Connector/Adapter - Test Firmware  |\n\r"
   "**********************************************\n\n\r"
   "Firmware ID: "
   };

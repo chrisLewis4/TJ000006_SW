@@ -171,9 +171,7 @@ typedef enum final_assy_types {NET_ASSY, EXTENSION_ASSY, ADAPTER_ASSY, LASTASSY_
 /*==================================================================*/
 /*                      GLOBAL CONSTANT DEFINITIONS                  */
 /*==================================================================*/
-int8 const NEWLINE_MSG[] PROGMEM =		{"\n\r"};
-int8 const NEWPAGE_MSG[] PROGMEM =		{"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\r"};
-int8 const DOT_MSG[] PROGMEM =		{"."};
+
 /*==================================================================*/
 /*                      LOCAL CONSTANT DEFINITIONS                  */
 /*==================================================================*/
@@ -249,7 +247,7 @@ Description :Initializes some of the test module variables just in case
 void MEN_Init(void)
 {
 	MEN_Rom_msg(NEWPAGE_MSG);
-	MEN_Rom_msg(COPYRIGHT_MSG1);		//display Copyright msg
+	MEN_Rom_msg(COPYRIGHT_MSG);		//display Copyright msg
 	MEN_Rom_msg(VER_Get_sw_pn());	//Display Firmware PN and Version
 	MEN_Rom_msg(NEWLINE_MSG);
 	
