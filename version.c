@@ -2,7 +2,7 @@
 *																	*
 *	Filename:		version.c										*
 *	Originator:		Chris Lewis										*
-*	Project:		Interface Board I2C Test Software				*
+*	Project:		Net Connector Test Software						*
 *	Description:													*
 *																	*
 ********************************************************************/
@@ -22,7 +22,7 @@
 /*						LOCAL CONSTANT DEFINITIONS					*/
 /*==================================================================*/
 
-static int8 const FW_PN[] PROGMEM = {"TJ000006_SW - Ver B1.5a"};
+static int8 const FW_PN[] PROGMEM = {"TJ000006_SW - Ver B1.5b"};
 
 /*==================================================================*/
 /*		LOCAL INITIALISED VARIABLES (initialised to 0 by default)	*/

@@ -1,11 +1,10 @@
-/*$Header$*/
 #if !defined _MENU_H
 #define _MENU_H
 /********************************************************************
 *                                                                   *
-*   Filename:   menu.h                                             *
+*   Filename:   menu.h                                              *
 *   Originator: C.Lewis                                             *
-*   Project:    6489-90 Universal Interface Board Test Jig          *
+*	Project:		Net Connector Test Software						*
 *                                                                   *
 *   This module is responsible for the debug menu generation and    *
 *   Functionality                                                   *

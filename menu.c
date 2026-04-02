@@ -56,6 +56,8 @@ static void Debug_menu(void);
 static void Start_menu(void);
 static void Select_bd_menu(void);
 static void Fstart_menu(void);
+static void Eeprom_debug_menu(void);
+
 			
 //data entry funcs
 static void Get_wo_no(void);
@@ -72,16 +74,6 @@ static void Test_msg_func(void);
 static int8 Cmd_check(int8);
 
 
-
-//EEPROM specific functions
-static void Eeprom_debug_menu(void);
-//static int8 Eeprom_write(int8 eeprom_addr,int16 byte_addr,int16 byte_count,int8 *buf);
-//static int8 Eeprom_read(int8 eeprom_addr,int16 byte_addr,int16 byte_count,int8 *buf);
-//static void Eeprom_fill(int8 set_char);
-//static void Eeprom_hex_dump(void);
-//static int16 Get_stored_checksum(void);
-//static int16 Calc_stored_checksum(void);
-//
 static int8 Get_stored_digit_string(int16 eeprom_pos, int16 size, int8 *buf);
 static int8 Get_stored_alpha_string(int16 eeprom_pos, int16 size, int8*buf);
 static void	Display_formatted_assy_info(void);
@@ -897,7 +889,7 @@ static void Start_eeprom_prog(void)
 	MAI_Set_header_cntrl(OP,LO);
 	cur_i2C_addr = EEPROM_ADDR_LO;
 
-	cur_calc_checksum = Calc_stored_checksum(cur_i2C_addr);
+	cur_calc_checksum = EE_Calc_stored_checksum(cur_i2C_addr);
 	cur_stored_checksum = EE_Get_stored_checksum(cur_i2C_addr);
 //	sprintf(tmpstr,"\n\rCalc = %04x\n\rStored = %04x\n\n\r",cur_calc_checksum,cur_stored_checksum);
 //	ASC_Asci_msg(tmpstr);
@@ -1142,7 +1134,7 @@ static void Eeprom_debug_menu(void)
 		//Check for Calc Checksum CMD
 		case 'C':
 		case 'c':
-			calcsum = Calc_stored_checksum(cur_i2C_addr);
+			calcsum = EE_Calc_stored_checksum(cur_i2C_addr);
 			storedsum = EE_Get_stored_checksum(cur_i2C_addr);
 			while(!ASC_Asci_tx_empty());
 			sprintf((char *)tmpstr,"\n\rCalculated Checksum = %04x\n\rStored Checksum     = %04x\n\r",calcsum,storedsum);
@@ -1292,7 +1284,7 @@ static void	Display_formatted_assy_info(void)
 	sprintf((char *)tmpstr,"Stored Checksum     = %04x\n\r",cur_stored_checksum);
 	ASC_Asci_msg(tmpstr);
 
-	cur_calc_checksum = Calc_stored_checksum(cur_i2C_addr);
+	cur_calc_checksum = EE_Calc_stored_checksum(cur_i2C_addr);
 	sprintf((char *)tmpstr,"Calculated Checksum = %04x\n\r",cur_calc_checksum);
 	ASC_Asci_msg(tmpstr);
 	MEN_Rom_msg(NEWLINE_MSG);	// newline
@@ -1407,7 +1399,7 @@ static int8 Verify_stored_data(void)
 					{
 						if(!strcmp((char *)tmpstr,(char *)bd_serial_no_str))
 						{
-							cur_calc_checksum = Calc_stored_checksum(cur_i2C_addr);
+							cur_calc_checksum = EE_Calc_stored_checksum(cur_i2C_addr);
 							cur_stored_checksum = EE_Get_stored_checksum(cur_i2C_addr);
 							if(cur_stored_checksum == cur_calc_checksum)
 								return TRUE;	
@@ -1435,7 +1427,7 @@ static void Prog_debug_details(void)
 	EE_Eeprom_write(cur_i2C_addr, EEPROM_ASSY_WO_STRING_LAYOUT_POS,EEPROM_ASSY_WO_STRING_LAYOUT_SIZE,wo_no_str ); // Store PCB assy number, code and rev
 	EE_Eeprom_write(cur_i2C_addr, EEPROM_ASSY_SN_STRING_LAYOUT_POS,EEPROM_BD_ASSY_SN_STRING_LAYOUT_SIZE,bd_serial_no_str ); // Store PCB assy number, code and rev
 
-	cur_calc_checksum = Calc_stored_checksum(cur_i2C_addr);
+	cur_calc_checksum = EE_Calc_stored_checksum(cur_i2C_addr);
 	EE_Store_checksum(cur_i2C_addr, cur_calc_checksum);
 
 //	Display_formatted_assy_info();
@@ -2054,7 +2046,7 @@ static void Prog_final_assy_details(void)
 		EE_Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_POS,EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_SIZE,&chan_count_list[net_id]); // Store chan count according to type
 	
 	// calc current EEPROM checksum
-	cur_calc_checksum = Calc_stored_checksum(cur_i2C_addr);
+	cur_calc_checksum = EE_Calc_stored_checksum(cur_i2C_addr);
 	// store new checksum
 	EE_Store_checksum(cur_i2C_addr, cur_calc_checksum);
 

@@ -191,7 +191,7 @@ void Eeprom_hex_dump(int8 cur_i2C_addr)
 // Description	:
 //--------------------------------------------------------------------
 
-int16 Calc_stored_checksum(int8 cur_i2C_addr)
+int16 EE_Calc_stored_checksum(int8 cur_i2C_addr)
 {
 	int8 n,buf[EEPROM_PAGE_SIZE+2];
 	int16 x, checksum, stored_sum;

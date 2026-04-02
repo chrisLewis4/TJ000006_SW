@@ -677,7 +677,7 @@ Disassembly of section .text:
 
 00001a8b <FW_PN>:
     1a8b:	54 4a 30 30 30 30 30 36 5f 53 57 20 2d 20 56 65     TJ000006_SW - Ve
-    1a9b:	72 20 42 31 2e 35 61 00 00                          r B1.5a..
+    1a9b:	72 20 42 31 2e 35 62 00 00                          r B1.5b..
 
 00001aa4 <__ctors_end>:
     1aa4:	11 24       	eor	r1, r1
@@ -1518,7 +1518,7 @@ Disassembly of section .text:
     2178:	cf 91       	pop	r28
     217a:	08 95       	ret
 
-0000217c <Calc_stored_checksum>:
+0000217c <EE_Calc_stored_checksum>:
     217c:	8f 92       	push	r8
     217e:	9f 92       	push	r9
     2180:	bf 92       	push	r11
@@ -1563,14 +1563,14 @@ Disassembly of section .text:
     21d0:	11 1d       	adc	r17, r1
     21d2:	8e 16       	cp	r8, r30
     21d4:	9f 06       	cpc	r9, r31
-    21d6:	d1 f7       	brne	.-12     	; 0x21cc <Calc_stored_checksum+0x50>
+    21d6:	d1 f7       	brne	.-12     	; 0x21cc <EE_Calc_stored_checksum+0x50>
     21d8:	50 e1       	ldi	r21, 0x10	; 16
     21da:	e5 0e       	add	r14, r21
     21dc:	f1 1c       	adc	r15, r1
     21de:	e1 14       	cp	r14, r1
     21e0:	82 e0       	ldi	r24, 0x02	; 2
     21e2:	f8 06       	cpc	r15, r24
-    21e4:	41 f7       	brne	.-48     	; 0x21b6 <Calc_stored_checksum+0x3a>
+    21e4:	41 f7       	brne	.-48     	; 0x21b6 <EE_Calc_stored_checksum+0x3a>
     21e6:	8b 2d       	mov	r24, r11
     21e8:	0e 94 a4 10 	call	0x2148	; 0x2148 <EE_Get_stored_checksum>
     21ec:	29 2f       	mov	r18, r25
@@ -2018,7 +2018,7 @@ Disassembly of section .text:
     2576:	80 91 8b 05 	lds	r24, 0x058B	; 0x80058b <cur_i2C_addr>
     257a:	0e 94 18 0f 	call	0x1e30	; 0x1e30 <EE_Eeprom_write>
     257e:	80 91 8b 05 	lds	r24, 0x058B	; 0x80058b <cur_i2C_addr>
-    2582:	0e 94 be 10 	call	0x217c	; 0x217c <Calc_stored_checksum>
+    2582:	0e 94 be 10 	call	0x217c	; 0x217c <EE_Calc_stored_checksum>
     2586:	90 93 89 05 	sts	0x0589, r25	; 0x800589 <cur_calc_checksum+0x1>
     258a:	80 93 88 05 	sts	0x0588, r24	; 0x800588 <cur_calc_checksum>
     258e:	2d b7       	in	r18, 0x3d	; 61
@@ -3230,7 +3230,7 @@ Disassembly of section .text:
     30ce:	c8 01       	movw	r24, r16
     30d0:	0e 94 06 0e 	call	0x1c0c	; 0x1c0c <ASC_Asci_msg>
     30d4:	80 91 8b 05 	lds	r24, 0x058B	; 0x80058b <cur_i2C_addr>
-    30d8:	0e 94 be 10 	call	0x217c	; 0x217c <Calc_stored_checksum>
+    30d8:	0e 94 be 10 	call	0x217c	; 0x217c <EE_Calc_stored_checksum>
     30dc:	80 93 88 05 	sts	0x0588, r24	; 0x800588 <cur_calc_checksum>
     30e0:	90 93 89 05 	sts	0x0589, r25	; 0x800589 <cur_calc_checksum+0x1>
     30e4:	9f 93       	push	r25
@@ -3711,7 +3711,7 @@ Disassembly of section .text:
     3560:	0e 94 15 10 	call	0x202a	; 0x202a <Eeprom_hex_dump>
     3564:	f2 c0       	rjmp	.+484    	; 0x374a <Eeprom_debug_menu+0x282>
     3566:	80 91 8b 05 	lds	r24, 0x058B	; 0x80058b <cur_i2C_addr>
-    356a:	0e 94 be 10 	call	0x217c	; 0x217c <Calc_stored_checksum>
+    356a:	0e 94 be 10 	call	0x217c	; 0x217c <EE_Calc_stored_checksum>
     356e:	18 2f       	mov	r17, r24
     3570:	09 2f       	mov	r16, r25
     3572:	80 91 8b 05 	lds	r24, 0x058B	; 0x80058b <cur_i2C_addr>
@@ -4117,7 +4117,7 @@ Disassembly of section .text:
     392e:	0e 94 0f 12 	call	0x241e	; 0x241e <MAI_Set_header_cntrl>
     3932:	80 e5       	ldi	r24, 0x50	; 80
     3934:	80 93 8b 05 	sts	0x058B, r24	; 0x80058b <cur_i2C_addr>
-    3938:	0e 94 be 10 	call	0x217c	; 0x217c <Calc_stored_checksum>
+    3938:	0e 94 be 10 	call	0x217c	; 0x217c <EE_Calc_stored_checksum>
     393c:	90 93 89 05 	sts	0x0589, r25	; 0x800589 <cur_calc_checksum+0x1>
     3940:	80 93 88 05 	sts	0x0588, r24	; 0x800588 <cur_calc_checksum>
     3944:	80 91 8b 05 	lds	r24, 0x058B	; 0x80058b <cur_i2C_addr>
@@ -4259,7 +4259,7 @@ Disassembly of section .text:
     3a92:	09 f0       	breq	.+2      	; 0x3a96 <Start_eeprom_prog+0x1d6>
     3a94:	4a c0       	rjmp	.+148    	; 0x3b2a <Start_eeprom_prog+0x26a>
     3a96:	80 91 8b 05 	lds	r24, 0x058B	; 0x80058b <cur_i2C_addr>
-    3a9a:	0e 94 be 10 	call	0x217c	; 0x217c <Calc_stored_checksum>
+    3a9a:	0e 94 be 10 	call	0x217c	; 0x217c <EE_Calc_stored_checksum>
     3a9e:	90 93 89 05 	sts	0x0589, r25	; 0x800589 <cur_calc_checksum+0x1>
     3aa2:	80 93 88 05 	sts	0x0588, r24	; 0x800588 <cur_calc_checksum>
     3aa6:	80 91 8b 05 	lds	r24, 0x058B	; 0x80058b <cur_i2C_addr>
@@ -4783,7 +4783,7 @@ Disassembly of section .text:
     3fde:	80 91 8b 05 	lds	r24, 0x058B	; 0x80058b <cur_i2C_addr>
     3fe2:	0e 94 18 0f 	call	0x1e30	; 0x1e30 <EE_Eeprom_write>
     3fe6:	80 91 8b 05 	lds	r24, 0x058B	; 0x80058b <cur_i2C_addr>
-    3fea:	0e 94 be 10 	call	0x217c	; 0x217c <Calc_stored_checksum>
+    3fea:	0e 94 be 10 	call	0x217c	; 0x217c <EE_Calc_stored_checksum>
     3fee:	90 93 89 05 	sts	0x0589, r25	; 0x800589 <cur_calc_checksum+0x1>
     3ff2:	80 93 88 05 	sts	0x0588, r24	; 0x800588 <cur_calc_checksum>
     3ff6:	bc 01       	movw	r22, r24

@@ -15,7 +15,7 @@ extern int8 EE_Eeprom_read(int8 eeprom_addr, int16 byte_addr,int16 byte_count,in
 extern int8 EE_Eeprom_write(int8 eeprom_addr,int16 byte_addr, int16 byte_count,int8 *data);
 extern void EE_Eeprom_fill(int8 cur_i2C_addr, int8 set_char);
 extern void Eeprom_hex_dump(int8 cur_i2C_addr);
-extern int16 Calc_stored_checksum(int8 cur_i2C_addr);
+extern int16 EE_Calc_stored_checksum(int8 cur_i2C_addr);
 extern int16 EE_Get_stored_checksum(int8 cur_i2C_addr);
 extern void EE_Store_checksum(int8 cur_i2C_addr, int16 checksum);
 

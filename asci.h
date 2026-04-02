@@ -2,7 +2,7 @@
 *																	*
 *	Filename:		asci.h											*
 *	Originator:		Chris Lewis										*
-*	Project:		Interface Board I2C Test Software				*
+*	Project:		Net Connector Test Software						*
 *	Description:													*
 *																	*
 ********************************************************************/

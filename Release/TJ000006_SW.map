@@ -709,9 +709,9 @@ END GROUP
  .text.EE_Get_stored_checksum
                 0x00002148       0x34 eeprom.o
                 0x00002148                EE_Get_stored_checksum
- .text.Calc_stored_checksum
+ .text.EE_Calc_stored_checksum
                 0x0000217c       0xaa eeprom.o
-                0x0000217c                Calc_stored_checksum
+                0x0000217c                EE_Calc_stored_checksum
  .text.EE_Store_checksum
                 0x00002226       0x2e eeprom.o
                 0x00002226                EE_Store_checksum
