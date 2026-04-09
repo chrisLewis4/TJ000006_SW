@@ -137,12 +137,6 @@ typedef enum final_assy_types {NET_ASSY, EXTENSION_ASSY, ADAPTER_ASSY, LASTASSY_
 #define EEPROM_ADDR_LO 0x50
 #define EEPROM_ADDR_HI 0x54
 
-// Define valid adresses
-#define NET_CONN_I2C_ADDR		0x50
-#define NET_EXTEND_I2C_ADDR		0x54
-#define ADC_BOT_I2C_ADDR		0x52
-#define ADC_TOP_I2C_ADDR		0x56
-#define PORT_EXPAND_I2C_ADDR	0x41
 
 // define storage layout positions from TD6500006 Net Spec
 #define EEPROM_FINAL_PROD_NUM_LAYOUT_POS		0x00	//

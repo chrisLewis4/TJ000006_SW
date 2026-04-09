@@ -63,10 +63,9 @@ Description	:
 --------------------------------------------------------------------*/
 void I2C_Init(void) 
 {
-	/* set pullups for SDA, SCL lines */
-	//I2C_SDA_PORT |= ((1 << I2C_SDA) | (1 << I2C_SCL));
-	TWBR = 12;   /* set bit rate (p.242): 8MHz / (16+2*TWBR*1) ~= 100kHz */
-	TWCR |= (1 << TWEN);                                       /* enable */
+	// Set SCL speed and enable I²C
+	TWBR = 12;				// set bit rate (p.222): 16MHz / (16+(2*TWBR)*1) = 400kHz 
+	TWCR |= (1 << TWEN);	// enable 
 		
  }
 /*====================================================================

@@ -195,18 +195,16 @@ int8 const BD_TYPE_EXTENDER_MSG[] PROGMEM =
 	"\n\n\n\rBoard Type is NET EXTENDER\n\n\r"
 };
 
-
-
 int8 const ASSY_NOT_DETECTED_MSG[] PROGMEM =
 {
-	"\n\n\n\r!!!No Assembly Connected to Jig !!!\n\n\r"
+	"\n\n\n\r!!! No Assembly Detected !!!\n\n\r"
 };
 
 int8 const START_MENU_MSG[] PROGMEM =
 {
 	"\n\n\r"
 	"Start MENU\n\r"
-	"============\n\r"
+	"==========\n\r"
 	"T - Board tests\n\r"
 	"D - Debug Menu\n\r"
 	"V - View Stored Info\n\r"

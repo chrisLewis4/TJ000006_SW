@@ -2,7 +2,10 @@
  * eeprom.c
  *
  * Created: 02/04/2026 12:35:41
- *  Author: chris.lewis
+ * Author: chris.lewis
+ * Project: TJ000006_SW EGI Net connector/Adapter Test Firmware
+
+ This module is responsible for the interface to the EEPROM on the Assembly under test
  */ 
 
 #include "ATMtypes.h"
@@ -227,8 +230,8 @@ int16 EE_Get_stored_checksum(int8 cur_i2C_addr)
 	
 	EE_Eeprom_read(cur_i2C_addr, EEPROM_CHECKSUM_LAYOUT_POS,EEPROM_CHECKSUM_LAYOUT_SIZE, buf);
 
-	checksum = ((int16)buf[0] << 8) & 0xff00;
-	checksum |= (int16)buf[1] & 0x00ff;
+	checksum = ((int16)buf[1] << 8) & 0xff00;
+	checksum |= (int16)buf[0] & 0x00ff;
 
 	//	sprintf((char *)tmpstr,"\n\rAddr = %04x:\n\rPos = %04x\n\rData size = %04x\n\rData = %02x,%02x\n\rChecksum = %04x\n\n\r",cur_i2C_addr,EEPROM_CHECKSUM_LAYOUT_POS,EEPROM_CHECKSUM_LAYOUT_SIZE,(int16)ptr[0],(int16)ptr[1],checksum);
 	//	ASC_Asci_msg(tmpstr);
@@ -247,8 +250,8 @@ void EE_Store_checksum(int8 cur_i2C_addr, int16 checksum)
 {
 	int8 buf[EEPROM_CHECKSUM_LAYOUT_SIZE+1];
 	
-	buf[0] = (int8)(checksum >> 8) & 0xff;
-	buf[1] = (int8)(checksum & 0x00ff);
+	buf[0] = (int8)(checksum & 0x00ff);
+	buf[1] = (int8)(checksum >> 8) & 0xff;
 	
 	//	sprintf(tmpstr,"\n\r** Storing %04x, %02x, %02x **\n\r", checksum, (int16)buf[0], (int16)buf[1]);
 	//	ASC_Asci_msg(tmpstr);

@@ -22,6 +22,12 @@ extern void EE_Store_checksum(int8 cur_i2C_addr, int16 checksum);
 
 #define EEPROM_PAGE_SIZE 16
 
+// Define valid I²C addresses
+#define NET_CONN_I2C_ADDR		0x50
+#define NET_EXTEND_I2C_ADDR		0x54
+#define PORT_EXPAND_I2C_ADDR	0x41
+#define ADC_BOT_I2C_ADDR		0x52
+#define ADC_TOP_I2C_ADDR		0x56
 
 
 #endif /* eeprom.h */
