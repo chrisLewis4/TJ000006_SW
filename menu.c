@@ -127,7 +127,7 @@ typedef enum final_assy_types {NET_ASSY, EXTENSION_ASSY, ADAPTER_ASSY, LASTASSY_
 #define BYTE_WRITE_ADDR_HI 0x10f
 #define BYTE_WRITE_ADDR_LO 0x040
 
-#define MAX_WO_STRING_LEN 10
+#define MAX_WO_STRING_LEN 11
 #define ASSY_STRING_LEN 4
 #define ASSY_REV_STRING_LEN 3
 #define BD_SN_STRING_LEN 3
@@ -147,7 +147,7 @@ typedef enum final_assy_types {NET_ASSY, EXTENSION_ASSY, ADAPTER_ASSY, LASTASSY_
 #define EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_POS	0x23
 
 #define EEPROM_ASSY_NUM_STRING_LAYOUT_POS	0xe2 // Full PCB assy num with null termination: xxxx-01-nny/0
-#define EEPROM_ASSY_WO_STRING_LAYOUT_POS	0xef
+#define EEPROM_ASSY_WO_STRING_LAYOUT_POS	0xee
 #define EEPROM_ASSY_SN_STRING_LAYOUT_POS	0xfa
 
 // define storage layout sizes from TD6500006 Net Spec
