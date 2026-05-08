@@ -432,7 +432,7 @@ int8 const PORT_EXPANDER_DEBUG_MSG[] PROGMEM =
 	"\n\n\n\n\r"
 	"Port Expander Debug\n\r"
 	"===================\n\r"
-	"Press 'X' to Exit\n\n\r"
+	"Press 'X' to Exit or press SPACEBAR to pause and resume\n\n\r"
 	"GSN3 GSN2 GSN1 GSN0\n\r"
 };
 int8 const PORT_EXPANDER_TEST_MSG[] PROGMEM =

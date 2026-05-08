@@ -144,7 +144,7 @@ typedef enum final_assy_types {NET_ASSY, EXTENSION_ASSY, ADAPTER_ASSY, LASTASSY_
 #define EEPROM_FINAL_PROD_REV_LAYOUT_POS		0x06
 #define EEPROM_FINAL_PROD_SN_LAYOUT_POS			0x09
 #define EEPROM_FINAL_PROD_NETID_LAYOUT_POS		0x22
-#define EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_POS	0x23
+#define EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_POS	0x17
 
 #define EEPROM_ASSY_NUM_STRING_LAYOUT_POS	0xe2 // Full PCB assy num with null termination: xxxx-01-nny/0
 #define EEPROM_ASSY_WO_STRING_LAYOUT_POS	0xee
@@ -1457,13 +1457,15 @@ static void Init_pe_debug_menu(void)
 static int8 pe_code = 0;
 static int8 pe_count = 0;
 static int8 pe_codes[PE_CODE_COUNT] = {0x00,0x01,0x02,0x04,0x08,0x0f,0x0e,0x0d,0x0b,0x07};
+static int8 pe_pause = FALSE;
+#define PE_DELAY 1000
 
 static void Port_expander_debug_menu(void)
 {
 	int8 rx_byte, pe_data;
 	
 	/* get rx char */
-	rx_byte = Cmd_check(CMD_ECHO);
+	rx_byte = Cmd_check(CMD_NO_ECHO);
 	/* check for valid rx char */
 	if(rx_byte)
 	{
@@ -1476,6 +1478,18 @@ static void Port_expander_debug_menu(void)
 				MAI_Set_port_expander_code(0);
 				MEN_Set_cmd_bk_func(DEBUG_MENU_MSG,Debug_menu);
 				return;
+			case ' ':
+				if(pe_pause)
+				{
+					TIM_Set_delay(PE_DELAY);
+					pe_pause = FALSE;
+				}
+				else
+				{
+					while(!TIM_Get_delay_flag());
+					pe_pause = TRUE;
+					
+				}
 			default:
 				break;
 		}
@@ -1485,13 +1499,18 @@ static void Port_expander_debug_menu(void)
 	{
 		pe_code = pe_codes[pe_count];
 		MAI_Set_port_expander_code((pe_code & 0x0f));
-		TIM_Set_delay(3000);
+		TIM_Set_delay(PE_DELAY);
 		I2C_Read(cur_i2C_addr,1,&pe_data);
 		//pe_data = pe_code; // Test Code
-		sprintf((char *)tmpstr," %01x    %01x    %01x    %01x     - Data Read = %01x%01x%01x%01x\r",((pe_code >> 3) & 0x01),((pe_code >> 2) & 0x01),((pe_code >> 1) & 0x01),(pe_code & 0x01),((pe_data>>3) & 0x01), ((pe_data>>2) & 0x01), ((pe_data>>1) & 0x01), (pe_data & 0x01));
+		sprintf((char *)tmpstr," %01x    %01x    %01x    %01x     - Data Read = %01x%01x%01x%01x\n\r",((pe_code >> 3) & 0x01),((pe_code >> 2) & 0x01),((pe_code >> 1) & 0x01),(pe_code & 0x01),((pe_data>>3) & 0x01), ((pe_data>>2) & 0x01), ((pe_data>>1) & 0x01), (pe_data & 0x01));
 		ASC_Asci_msg(tmpstr);
 		if(++pe_count >= PE_CODE_COUNT)
+		{
+//			MAI_Set_port_expander_code(0);
+//			MEN_Set_cmd_bk_func(DEBUG_MENU_MSG,Debug_menu);
 			pe_count = 0;
+//			return;
+		}
 	}
 }
 //====================================================================
