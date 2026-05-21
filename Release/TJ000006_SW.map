@@ -732,7 +732,7 @@ END GROUP
                 0x0080031c                _edata = .
                 0x0080031c                PROVIDE (__data_end, .)
 
-.bss            0x0080031c      0x1f2
+.bss            0x0080031c      0x1f3
                 0x0080031c                PROVIDE (__bss_start, .)
  *(.bss)
  *(.bss*)
@@ -759,39 +759,39 @@ END GROUP
  .bss.assy_no_str
                 0x008003f5        0x5 menu.o
  .bss.wo_no_str
-                0x008003fa        0xb menu.o
+                0x008003fa        0xc menu.o
  .bss.user_ip_max_chars
-                0x00800405        0x1 menu.o
- .bss.user_ip_buf_ix
                 0x00800406        0x1 menu.o
+ .bss.user_ip_buf_ix
+                0x00800407        0x1 menu.o
  .bss.user_ip_buf
-                0x00800407       0x15 menu.o
+                0x00800408       0x15 menu.o
  .bss.MEN_MSG_PTR
-                0x0080041c        0x2 menu.o
+                0x0080041d        0x2 menu.o
  .bss.next_cmd_func
-                0x0080041e        0x2 menu.o
+                0x0080041f        0x2 menu.o
  .bss.cmd_bk_func
-                0x00800420        0x2 menu.o
+                0x00800421        0x2 menu.o
  .bss.delay_flag
-                0x00800422        0x1 Timer.o
+                0x00800423        0x1 Timer.o
  .bss.delay_cnt
-                0x00800423        0x2 Timer.o
+                0x00800424        0x2 Timer.o
  .bss.set_delay
-                0x00800425        0x2 Timer.o
+                0x00800426        0x2 Timer.o
  *(COMMON)
- COMMON         0x00800427       0x32 main.o
-                0x00800427                tmpstr
- COMMON         0x00800459       0xb5 romdata.o
-                0x00800459                rambuf
-                0x0080050e                PROVIDE (__bss_end, .)
+ COMMON         0x00800428       0x32 main.o
+                0x00800428                tmpstr
+ COMMON         0x0080045a       0xb5 romdata.o
+                0x0080045a                rambuf
+                0x0080050f                PROVIDE (__bss_end, .)
                 0x00002afa                __data_load_start = LOADADDR (.data)
                 0x00002d16                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x0080050e        0x0
+.noinit         0x0080050f        0x0
                 [!provide]                PROVIDE (__noinit_start, .)
  *(.noinit*)
                 [!provide]                PROVIDE (__noinit_end, .)
-                0x0080050e                _end = .
+                0x0080050f                _end = .
                 [!provide]                PROVIDE (__heap_start, .)
 
 .eeprom         0x00810000        0x0

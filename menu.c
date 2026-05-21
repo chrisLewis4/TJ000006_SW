@@ -94,7 +94,7 @@ static int8 Wait_for_x_or_enter(void);
 #define BYTE_WRITE_ADDR_HI 0x10f
 #define BYTE_WRITE_ADDR_LO 0x040
 
-#define MAX_WO_STRING_LEN 10
+#define MAX_WO_STRING_LEN 11
 #define BD_ASSY_STRING_LEN 4
 #define BD_ASSY_REV_STRING_LEN 3
 #define BD_SN_STRING_LEN 3
@@ -112,7 +112,7 @@ static int8 Wait_for_x_or_enter(void);
 #define EEPROM_FINAL_PROD_SN_LAYOUT_POS		0x09
 
 #define EEPROM_ASSY_NUM_STRING_LAYOUT_POS	0xe2 // Full PCB assy num with null termination: xxxx-01-nny/0
-#define EEPROM_ASSY_WO_STRING_LAYOUT_POS	0xef
+#define EEPROM_ASSY_WO_STRING_LAYOUT_POS	0xee
 #define EEPROM_ASSY_SN_STRING_LAYOUT_POS	0xfa
 #define EEPROM_CHECKSUM_LAYOUT_POS			0xfe
 
@@ -165,7 +165,7 @@ int8 const START_MENU_MSG[] PROGMEM =
 int8 const ENTER_WO_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
-	"Enter the Works Order No (WO) of the batch of boards Under Test\n\r(MAX = 10 Characters)\n\r"
+	"Enter the Works Order No (WO) of the batch of boards Under Test\n\r(MAX = 11 Characters)\n\r"
 };
 int8 const ENTER_ASSY_NO_MSG[] PROGMEM =
 {
