@@ -181,10 +181,13 @@ int8 const ASSY_TYPE_EXTENDER_MSG[] PROGMEM =
 {
 	"\n\n\n\rAssembly Type is NET EXTENDER\n\n\r"
 };
-
-int8 const ASSY_TYPE_CONN_ADAPTER_MSG[] PROGMEM =
+int8 const ASSY_TYPE_ADAPTER_MSG[] PROGMEM =
 {
-	"\n\n\n\rAssembly Type is NET CONNECTOR/ADAPTER\n\r"
+	"\n\n\n\rAssembly Type is ADAPTER\n\r"
+};
+int8 const ASSY_TYPE_NET_MSG[] PROGMEM =
+{
+	"\n\n\n\rAssembly Type is NET\n\r"
 };
 int8 const BD_TYPE_NET_CONN_MSG[] PROGMEM =
 {
@@ -193,6 +196,10 @@ int8 const BD_TYPE_NET_CONN_MSG[] PROGMEM =
 int8 const BD_TYPE_EXTENDER_MSG[] PROGMEM =
 {
 	"\n\n\n\rBoard Type is NET EXTENDER\n\n\r"
+};
+int8 const BD_TYPE_ADAPTER_MSG[] PROGMEM =
+{
+	"\n\n\n\rBoard Type is NET ADAPTER\n\n\r"
 };
 
 int8 const ASSY_NOT_DETECTED_MSG[] PROGMEM =
@@ -423,7 +430,7 @@ int8 const DEBUG_MENU_MSG[] PROGMEM =
 	"2 - 0x52: ADC Bottom Bd\n\r"
 	"3 - 0x54: Net Extension\n\r"
 	"4 - 0x56: ADC Top Bd\n\r"
-	"5 - 0x41: Port Expander (6768-01 Only)\n\r"
+	"5 - 0x41: Port Expander (6769-01 & 6770-01)\n\r"
 	"\n\rPress X to exit\n\n\r"
 };
 

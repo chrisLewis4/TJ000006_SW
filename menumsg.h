@@ -30,8 +30,7 @@ extern int8 const CMD_NOT_IMPLEMENTED_MSG[];
 extern int8 const NET_CONN_PCB_MSG[];
 extern int8 const NET_ADAPT_PCB_MSG[];
 	
-extern int8 const STORED_DETAILS_MSG[]
-;
+extern int8 const STORED_DETAILS_MSG[];
 /* declare Terminal Menus text*/
 //*********************  Start Menu  ***************************
 extern int8 const FSTART_MENU_MSG[];
@@ -66,9 +65,11 @@ extern int8 const ASSY_ID_TEST_FAILED_MSG[];
 extern int8 const FINAL_ASSY_TEST_FAIL_MSG[];
 extern int8 const HYPER_ADAPTER_NOT_FITTED_MSG[];
 extern int8 const ASSY_TYPE_EXTENDER_MSG[];
-extern int8 const ASSY_TYPE_CONN_ADAPTER_MSG[];
+extern int8 const ASSY_TYPE_ADAPTER_MSG[];
+extern int8 const ASSY_TYPE_NET_MSG[];
 extern int8 const BD_TYPE_NET_CONN_MSG[];
 extern int8 const BD_TYPE_EXTENDER_MSG[];
+extern int8 const BD_TYPE_ADAPTER_MSG[];
 extern int8 const ASSY_NOT_DETECTED_MSG[];
 extern int8 const START_MENU_MSG[];
 extern int8 const SELECT_BD_MSG[];

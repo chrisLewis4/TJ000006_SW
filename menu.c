@@ -466,12 +466,21 @@ static void Start_menu(void)
 				}
 				else
 				{
-					MEN_Rom_msg(ASSY_NOT_DETECTED_MSG);
+					cur_i2C_addr = PORT_EXPAND_I2C_ADDR;	// no response so set Hi addr
+					if(I2C_ping_addr(cur_i2C_addr))
+					{
+						adapter_flag = TRUE;
+						MEN_Rom_msg(BD_TYPE_ADAPTER_MSG);
+					}
+					else
+						MEN_Rom_msg(ASSY_NOT_DETECTED_MSG);
+
 					MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu);
 					MAI_Set_power(OFF);
 					return;
 				}
 			}
+			
 			ASC_Asci_msg(msg);
 			Display_formatted_assy_info();
 			MEN_Set_cmd_bk_func(START_MENU_MSG,Start_menu);
@@ -1617,7 +1626,7 @@ static void Fstart_menu(void)
 			MAI_Set_power(ON);
 			TIM_Wait(100);
 			cur_i2C_addr = EEPROM_ADDR_LO;
-			msg = ROM_Read_romstr(ASSY_TYPE_CONN_ADAPTER_MSG);
+			msg = ROM_Read_romstr(ASSY_TYPE_NET_MSG);
 			if(!I2C_ping_addr(cur_i2C_addr))
 			{
 				cur_i2C_addr = EEPROM_ADDR_HI;	// no response so set Hi addr
@@ -1629,10 +1638,21 @@ static void Fstart_menu(void)
 				else
 				{
 					MEN_Rom_msg(ASSY_NOT_DETECTED_MSG);
+						
 					MEN_Set_cmd_bk_func(FSTART_MENU_MSG,Fstart_menu);
 					MAI_Set_power(OFF);
 					return;
 				}
+			}
+			else
+			{
+				cur_i2C_addr = PORT_EXPAND_I2C_ADDR;	// no response so set Hi addr
+				if(I2C_ping_addr(cur_i2C_addr))
+				{
+					adapter_flag = TRUE;
+					msg = ROM_Read_romstr(ASSY_TYPE_ADAPTER_MSG);
+				}
+				cur_i2C_addr = EEPROM_ADDR_LO;
 			}
 			ASC_Asci_msg(msg);
 			Display_formatted_assy_info();
