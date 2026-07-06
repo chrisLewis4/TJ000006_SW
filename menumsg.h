@@ -1,5 +1,5 @@
 /*
- * IncFile1.h
+ * menumsg.h
  *
  * Created: 02/04/2026 12:25:15
  *  Author: chris.lewis
@@ -87,6 +87,7 @@ extern int8 const CONNECT_ADAPTER_MSG[];
 extern int8 const PROG_EEPROM_MSG[];
 extern int8 const PROG_SUCCESS_MSG[];
 extern int8 const PORT_EXPANDER_TEST_FAILED_MSG[];
+extern int8 const PORT_EXPANDER_TEST_MENU_MSG[];
 extern int8 const BD_TEST_SUCCESS_MSG[];
 extern int8 const BD_TEST_FAIL_MSG[];
 extern int8 const MAX_USER_IP_LEN_EXEEDED_MSG[];
@@ -113,4 +114,4 @@ extern int8 const DEBUG_MENU_MSG[];
 extern int8 const PORT_EXPANDER_DEBUG_MSG[];
 extern int8 const PORT_EXPANDER_TEST_MSG[];
 
-#endif /* INCFILE1_H_ */
+#endif /* MENUMSG_H_ */

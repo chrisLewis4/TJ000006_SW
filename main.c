@@ -194,7 +194,6 @@ Description	:
 --------------------------------------------------------------------*/
 void MAI_Set_port_expander_code(int8 code)
 {
-
 	PORT_EXPANDER_GSN_PORT = (PORT_EXPANDER_GSN_PORT & 0x0f) | ((code << 4) & (0xf0 | ADAPTER_NOT_DETECTED_BIT)); // sets code on PORTD and Ensure BIT3 pull-up is enabled
 
 }

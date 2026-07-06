@@ -82,17 +82,17 @@ int8 const SELECT_NET_ID_MSG[] PROGMEM =
 	"Select the Net Size ID from the following list\n\n\r"
 	"    ID                DESCRIPTION\n\r"
 	"-----------------------------------------------------\n\r"
-	"0 - 0  64  Channel Geodesic Sensor Nets 2.x\n\r"
-	"1 - 1  128 Channel Geodesic Sensor Nets 2.x\n\r"
-	"2 - 2  256 Channel Geodesic Sensor Nets 2.x\n\r"
-	"3 - 3  32  Channel Hydrocel Geodesic Sensor Nets 1.0\n\r"
-	"4 - 4  64  Channel Hydrocel Geodesic Sensor Nets 1.0\n\r"
-	"5 - 5  128 Channel Hydrocel Geodesic Sensor Nets 1.0\n\r"
-	"6 - 6  256 Channel Hydrocel Geodesic Sensor Nets 1.0\n\r"
-	"7 - 7  32  Channel Microcel Geodesic Sensor Nets 1.0\n\r"
-	"8 - 8  64  Channel Microcel Geodesic Sensor Nets 1.0\n\r"
-	"9 - 9  128 Channel Microcel Geodesic Sensor Nets 1.0\n\r"
-	"a - 10 256 Channel Microcel Geodesic Sensor Nets 1.0\n\r"
+	"0 - 0\t64  Channel Geodesic Sensor Nets 2.x\n\r"
+	"1 - 1\t128 Channel Geodesic Sensor Nets 2.x\n\r"
+	"2 - 2\t256 Channel Geodesic Sensor Nets 2.x\n\r"
+	"3 - 3\t32  Channel Hydrocel Geodesic Sensor Nets 1.0\n\r"
+	"4 - 4\t64  Channel Hydrocel Geodesic Sensor Nets 1.0\n\r"
+	"5 - 5\t128 Channel Hydrocel Geodesic Sensor Nets 1.0\n\r"
+	"6 - 6\t256 Channel Hydrocel Geodesic Sensor Nets 1.0\n\r"
+	"7 - 7\t32  Channel Microcel Geodesic Sensor Nets 1.0\n\r"
+	"8 - 8\t64  Channel Microcel Geodesic Sensor Nets 1.0\n\r"
+	"9 - 9\t128 Channel Microcel Geodesic Sensor Nets 1.0\n\r"
+	"a - 10\t256 Channel Microcel Geodesic Sensor Nets 1.0\n\r"
 };
 int8 const NET_ID0_MSG[] PROGMEM = {"0: 64 Channel Geodesic Sensor Nets 2.x"};
 int8 const NET_ID1_MSG[] PROGMEM = {"1: 128 Channel Geodesic Sensor Nets 2.x"};
@@ -135,9 +135,9 @@ int8 const FINAL_ASSY_PROG_FAIL_MSG[] PROGMEM =
 	"\n\n\n\r"
 	"!!! FAILED TO PROGRAM DETAILS !!!\n\r"
 	"Check:\n\r"
-	"   *The the final assembly type is correct\n\r"
-	"   *The Assembly is correctly fitted to the Test Jig\n\n\r"
-	"Press 'ENTER' to RETRY  of 'X' to exit to start menu\n\r"
+	" * The the final assembly type is correct\n\r"
+	" * The Assembly is correctly fitted to the Test Jig\n\n\r"
+	"Press 'ENTER' to RETRY  or 'X' to exit \n\r"
 };
 
 int8 const CONNECT_FINAL_ASSY_TO_JIG_MSG[] PROGMEM =
@@ -157,7 +157,8 @@ int8 const CONNECT_LEGACY_ADAPTER_MSG[] PROGMEM =
 
 int8 const ASSY_ID_TEST_FAILED_MSG[] PROGMEM =
 {
-	"\n\r!!! NET IDENTIFICATION TEST FAILED !!!\n\r"
+	"\n\r!!! NET IDENTIFICATION TEST FAILED !!!\n\n\r"
+	"Ensure Connection to Legacy Connector is correct\n\r"
 	"Press 'X' to exit or ENTER key to Retry\n\r"
 };
 
@@ -167,8 +168,8 @@ int8 const FINAL_ASSY_TEST_FAIL_MSG[] PROGMEM =
 	"!!! TEST FAILED !!!\n\r"
 	"!!!!!!!!!!!!!!!!!!!\n\n\r"
 	"Remove Assembly and quarantine or retest\n\n\r"
-	"Press 'ENTER' to program a Final assembly of the same type\n\r"
-	"Press 'X' to exit to start menu\n\r"
+//	"Press 'ENTER' to program a Final assembly of the same type\n\r"
+//	"Press 'X' to exit to start menu\n\r"
 };
 
 int8 const HYPER_ADAPTER_NOT_FITTED_MSG[] PROGMEM =
@@ -179,7 +180,7 @@ int8 const HYPER_ADAPTER_NOT_FITTED_MSG[] PROGMEM =
 
 int8 const ASSY_TYPE_EXTENDER_MSG[] PROGMEM =
 {
-	"\n\n\n\rAssembly Type is NET EXTENDER\n\n\r"
+	"\n\n\n\rAssembly Type is NET EXTENDER PN 6708-00\n\n\r"
 };
 int8 const ASSY_TYPE_ADAPTER_MSG[] PROGMEM =
 {
@@ -224,26 +225,26 @@ int8 const SELECT_BD_MSG[] PROGMEM =
 	"Select Board Under Test (BUT)\n\r"
 	"=============================\n\r"
 	"1 - 6519-01 - Net Connector PCB\n\r"
-	"2 - 6768-01 - Net Adapter PCB\n\r"
+	"2 - 6769-01/6770-01 - 256/128 Net Adapter PCB\n\r"
 	"X - Exit to Start Menu\n\r"
 	"<ENTER>- To refresh screen\n\n\r"
 };
 
 int8 const NET_CONN_SELECTED_MSG[] PROGMEM =
 {
-	"\n\n\n\r"
+	"\n\r"
 	"6519-01 Net Connector PCB selected\n\r"
 };
 int8 const NET_ADAPT_SELECTED_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
-	"6768-01 Net Adapter PCB selected\n\r"
+	"6769-01/6770-01 Net Adapter PCB selected\n\r"
 };
 
 int8 const ENTER_WO_MSG[] PROGMEM =
 {
 	"\n\n\n\r"
-	"Enter the Works Order No (WO) of the batch of boards Under Test\n\r(MAX = 10 Characters)\n\r"
+	"Enter the Works Order No (WO) of the batch of boards Under Test\n\r(MAX = 11 Characters)\n\r"
 };
 int8 const ENTER_BD_ASSY_NO_MSG[] PROGMEM =
 {
@@ -304,7 +305,8 @@ int8 const PROG_SUCCESS_MSG[] PROGMEM =
 
 int8 const PORT_EXPANDER_TEST_FAILED_MSG[] PROGMEM =
 {
-	"\n\r!!! NET IDENTIFICATION TEST FAILED !!!\n\r"
+	"\n\r!!! NET IDENTIFICATION TEST FAILED !!!\n\n\r"
+	"Ensure Connection to Legacy Connector is correct\n\r"
 	"Press 'X' to exit or ENTER key to Retry\n\r"
 };
 
@@ -344,7 +346,7 @@ int8 const NO_FINAL_ASSY_REV_SN_IP_CHARS_MSG[] PROGMEM =
 
 int8 const NOT_ENOUGH_WO_NO_IP_CHARS_MSG[] PROGMEM =
 {
-	"\n\n\r!!! Not Enough characters for Works Order - 1 Required !!!\n\rPlease retry\n\r"
+	"\n\n\r!!! Not Enough characters for Works Order - 1 to 11 Required !!!\n\rPlease retry\n\r"
 };
 
 int8 const CHECK_HEADER_MSG[] PROGMEM =
@@ -391,7 +393,10 @@ int8 const DATA_RETENTION_OK_MSG[] PROGMEM =
 };
 int8 const DATA_RETENTION_BAD_MSG[] PROGMEM =
 {
-	"\n\rData retention Check FAILED!!\n\r"
+	"\n\r!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+	"\n\r!!! Data retention Check FAILED !!!"
+	"\n\r!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+	"\n\n\rRemove Board and quarantine\n\n\r"
 };
 
 int8 const EEPROM_READ_ERROR_MSG[] PROGMEM =
@@ -442,6 +447,18 @@ int8 const PORT_EXPANDER_DEBUG_MSG[] PROGMEM =
 	"Press 'X' to Exit or press SPACEBAR to pause and resume\n\n\r"
 	"GSN3 GSN2 GSN1 GSN0\n\r"
 };
+int8 const PORT_EXPANDER_TEST_MENU_MSG[] PROGMEM =
+{
+	"\n\r"
+	"Net Adapter Board Test\n\r"
+	"=======================\n\r"
+	" * Ensure the D-sub PCB Assy Adapter is connected to the Test Jig\n\r"
+	" * Ensure the 100 Way Connector is connected to J3 on the BUT\n\r"
+	" * Ensure the 4, test pins on the D-sub PCB Assy Adapter are connected\n\r"
+	"   to the appropriate sockets on the Hypertronics connector on the BUT\n\r"
+	"Press 'X' to Exit or press ENTER to proceed\n\n\r"
+};
+
 int8 const PORT_EXPANDER_TEST_MSG[] PROGMEM =
 {
 	"\n\r"
