@@ -44,6 +44,8 @@ extern const int8 ADAPTER_ASSY_MSG[];
 extern int8 const ENTER_FINAL_ASSY_SN_MSG[];
 
 extern int8 const SELECT_NET_ID_MSG[];
+extern int8 const ADAPTER_ID_MSG[];
+
 extern int8 const NET_ID0_MSG[];
 extern int8 const NET_ID1_MSG[];
 extern int8 const NET_ID2_MSG[];
@@ -114,4 +116,5 @@ extern int8 const DEBUG_MENU_MSG[];
 extern int8 const PORT_EXPANDER_DEBUG_MSG[];
 extern int8 const PORT_EXPANDER_TEST_MSG[];
 
+extern int8 const PROG_DETAILS_MSG[];
 #endif /* MENUMSG_H_ */

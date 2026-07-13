@@ -94,6 +94,11 @@ int8 const SELECT_NET_ID_MSG[] PROGMEM =
 	"9 - 9\t128 Channel Microcel Geodesic Sensor Nets 1.0\n\r"
 	"a - 10\t256 Channel Microcel Geodesic Sensor Nets 1.0\n\r"
 };
+int8 const ADAPTER_ID_MSG[] PROGMEM =
+{
+	"b - Net Adatpter\n\r"
+};
+
 int8 const NET_ID0_MSG[] PROGMEM = {"0: 64 Channel Geodesic Sensor Nets 2.x"};
 int8 const NET_ID1_MSG[] PROGMEM = {"1: 128 Channel Geodesic Sensor Nets 2.x"};
 int8 const NET_ID2_MSG[] PROGMEM = {"2: 256 Channel Geodesic Sensor Nets 2.x"};
@@ -411,7 +416,6 @@ int8 const NUMERIC_CHARS_ONLY_MSG[] PROGMEM =
 {
 	"\n\n\r !!! Please Re-Enter using numeric characters only ('0'-'9') !!!\n\r"
 };
-
 int8 const EEPROM_DEBUG_MSG[] PROGMEM =
 {
 	"\n\n\n\n\rEEPROM Debug"
@@ -467,6 +471,21 @@ int8 const PORT_EXPANDER_TEST_MSG[] PROGMEM =
 	"Bit3 = GSN3, Bit2 = GSN2, Bit1 = GSN1, Bit0 = GSN0\n\n\r"
 	"OUT    IN\n\r"
 };
+
+int8 const PROG_DETAILS_MSG[] PROGMEM =
+{
+	"\n\r"
+	"Select Detail To Program\n\r"
+	"========================\n\r"
+	"1 - Product number, code & Rev (9 Chars)\n\r"
+	"2 - Serial number (12 chars max)\n\r"
+	"3 - Net ID (1 char: 0 to A)\n\r"
+	"4 - PCB Assy PN/Code & Rev (9 chars)\n\r"
+	"5 - PCB Assy Works Order No. (11 chars max)\n\r"
+	"6 - PCB Assy Serial No. (3 chars)\n\n\r"
+};
+
+
 
 
 

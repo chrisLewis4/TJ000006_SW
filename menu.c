@@ -99,6 +99,9 @@ static void Retry_prog_final_assy_menu(void);
 static void Get_secret_access_code(void);
 static void Net_id_menu(void);
 
+static void Prog_details_menu(void);
+static int8 Get_ip_chars(int8* buf,int8 count,int8 max_flag);
+
 /*==================================================================*/
 /*                      LOCAL TYPE DEFINITIONS                      */
 /*==================================================================*/
@@ -1183,7 +1186,8 @@ static void Eeprom_debug_menu(void)
 			user_ip_buf_ix = 0;	//reset user input buf index
 			user_ip_max_chars = MAX_WO_STRING_LEN;
 			MEN_Rom_msg(NEWPAGE_MSG);
-			MEN_Set_cmd_bk_func(SELECT_BD_MSG,Select_bd_menu);
+	//		MEN_Set_cmd_bk_func(SELECT_BD_MSG,Select_bd_menu);
+			MEN_Set_cmd_bk_func(PROG_DETAILS_MSG,Prog_details_menu);
 			return;
 			
 		case 'X':
@@ -1230,6 +1234,11 @@ static int8 Check_number_char(int8 c)
 {
 	return ((c >= 0x30) && (c <= 0x39));
 }
+static int8 Check_alpha_char(int8 c)
+{
+	return ( ((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '-') );
+}
+
 //====================================================================
 // Name			:
 // Parameters	:
@@ -1254,10 +1263,6 @@ static int8 Get_stored_alpha_string(int16 eeprom_pos, int16 size, int8*buf)
 	}
 	buf[x] = '\0';	//terminate string
 	return TRUE;
-}
-static int8 Check_alpha_char(int8 c)
-{
-	return ( ((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || (c == '-') );
 }
 //====================================================================
 // Name			:
@@ -1316,7 +1321,7 @@ static void	Display_formatted_assy_info(void)
 		else if(extender_flag)
 			ptr = ROM_Read_romstr(EXTENSION_ASSY_MSG);
 		else
-			ptr = ROM_Read_romstr(net_id_list[net_id]);
+			ptr = ROM_Read_romstr(net_id_list[*tmp]);
 	}
 	else
 		ptr = (int8 *)ROM_Read_romstr(DATA_NOT_SET_MSG);
@@ -2274,6 +2279,147 @@ static void Retry_prog_final_assy_menu(void)
 			MEN_Set_cmd_bk_func(NULL,Prog_same_final_assy_menu);
 			return;
 	}	
+}
+/*==================================================================
+Name		:
+Parameters	:
+Returns		:
+Description	:
+------------------------------------------------------------------*/
+static void Prog_details_menu(void)
+{
+	int8 rx_byte, exit_flag = FALSE;
+	int8 buf[14], id, x;
+
+	for(x = 0; x < 14; x++)
+		buf[x] = 0;
+		
+	// get any RX chars *
+	rx_byte = Cmd_check(CMD_ECHO);
+	// return if none available
+	if(!rx_byte)
+		return;
+	switch (rx_byte)
+	{
+		case '1': //"1 - Product number, code & Rev (9 Chars)\n\r"
+			exit_flag = Get_ip_chars(buf,9,FALSE);
+			if(!exit_flag)
+			{
+//				strncpy((char *)&tmpstr[0],&buf[0],4); //Copy PN
+//				tmpstr[4] = 0;
+				// store prod no.
+				EE_Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_NUM_LAYOUT_POS,EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE,&buf[0] ); // Store PCB assy number
+				//	Store Prod code ("00")
+				EE_Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_CODE_LAYOUT_POS,EEPROM_FINAL_PROD_CODE_LAYOUT_SIZE,&buf[4] ); // Store PCB assy code 
+				//	Store Prod Rev
+				EE_Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_REV_LAYOUT_POS,EEPROM_FINAL_PROD_REV_LAYOUT_SIZE,&buf[6] ); // Store PCB assy rev
+			}
+			break;
+		case '2'://"2 - Serial number (12 chars max)\n\r"
+			exit_flag = Get_ip_chars(buf,12,TRUE);
+			if(!exit_flag)
+			{
+				// Store Prod SN
+				EE_Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_SN_LAYOUT_POS,EEPROM_FINAL_PROD_SN_LAYOUT_SIZE,buf ); // Store assy SN
+			}
+			break;
+		case '3': //"3 - Net ID (1 char: 0 to A)\n\r"
+			MEN_Rom_msg(SELECT_NET_ID_MSG);
+			MEN_Rom_msg(ADAPTER_ID_MSG);
+			
+			exit_flag = Get_ip_chars(buf,1,FALSE);
+			if(Check_number_char(*buf))
+				id = *buf - 0x30;
+			else if (*buf == 'a' || *buf == 'A')
+				id = 0x0a;
+			else if (*buf == 'b' || *buf == 'B')
+				id = 0x80;
+			else
+				break;
+
+//			sprintf(tmpstr,"\n\n\rID = %x\n\n\r",(int16)id);
+//  		ASC_Asci_msg(tmpstr);
+			
+			EE_Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_NETID_LAYOUT_POS,EEPROM_FINAL_PROD_NETID_LAYOUT_SIZE,&id); // Store NET ID
+			if(id <= 0x0a)
+				EE_Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_POS,EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_SIZE,&chan_count_list[id]); // Store chan count according to type
+			else // must be adapter
+			{
+				id = 0;
+				EE_Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_POS,EEPROM_FINAL_PROD_CHANCOUNT_LAYOUT_SIZE,&id); // Store chan count as 0 
+			}
+			break;
+		case '4': //"4 - PCB Assy PN/Code & Rev (9 chars)\n\r"
+			exit_flag = Get_ip_chars(buf,9,FALSE);
+			if(!exit_flag)
+			{
+				// format & store Assy no, code and rev .
+				strncpy(tmpstr,buf,4);
+				tmpstr[4] = '-';
+				strncpy(&tmpstr[5],&buf[4],2);
+				tmpstr[7] = '-';
+				strncpy(&tmpstr[8],&buf[6],4);
+				tmpstr[12] = 0;
+								
+				EE_Eeprom_write(cur_i2C_addr, EEPROM_ASSY_NUM_STRING_LAYOUT_POS,EEPROM_ASSY_NUM_STRING_LAYOUT_SIZE,tmpstr ); // Store PCB assy number, code and rev
+			}
+		
+			break;
+		case '5': //"5 - PCB Assy Works Order No. (11 chars max)\n\r"
+			exit_flag = Get_ip_chars(buf,11,TRUE);
+			if(!exit_flag)
+			{
+				// Store Prod SN
+				EE_Eeprom_write(cur_i2C_addr, EEPROM_ASSY_WO_STRING_LAYOUT_POS,EEPROM_ASSY_WO_STRING_LAYOUT_SIZE,buf ); // Store assy WO
+			}
+			break;
+		case '6': //"6 - PCB Assy Serial No. (3 chars)\n\n\r"	
+			exit_flag = Get_ip_chars(buf,3,FALSE);
+			if(!exit_flag)
+			{
+				EE_Eeprom_write(cur_i2C_addr, EEPROM_ASSY_SN_STRING_LAYOUT_POS,EEPROM_BD_ASSY_SN_STRING_LAYOUT_SIZE,buf ); // Store PCB assy SN
+				break;
+			}
+		case 'x':
+		case 'X':
+			exit_flag = TRUE;
+		default:
+			break;
+	}
+	if(exit_flag)
+		MEN_Set_cmd_bk_func(EEPROM_DEBUG_MSG,Eeprom_debug_menu);
+	else
+	{
+		EE_Store_checksum(cur_i2C_addr, EE_Calc_stored_checksum(cur_i2C_addr));
+		Display_formatted_assy_info();
+		MEN_Set_cmd_bk_func(PROG_DETAILS_MSG,Prog_details_menu);
+	}
+
+}
+static int8 Get_ip_chars(int8* buf,int8 count,int8 max_flag)
+{
+	int8 rx_byte,n;
+
+	MEN_Rom_msg(NEWLINE_MSG);
+	// loop until all chars are in
+	for(n = 0; n < count; n++)
+	{
+		// wait for chars
+		do{	rx_byte = Cmd_check(CMD_ECHO); } while (!rx_byte);
+		// store process rx_byte
+		buf[n] = rx_byte;
+		if(n == 0 && (rx_byte == 'x' || rx_byte == 'x'))
+			return TRUE;
+		if (max_flag && ((rx_byte == '\n') || (rx_byte == '\r')))
+		{
+			buf[n] = 0;
+			return FALSE;
+		}
+		if(!Check_alpha_char(rx_byte))
+			n--;
+	}
+	buf[n] = 0;
+	return FALSE;
 }
 /*********************************************************************
 *                       End of menu.c                                *

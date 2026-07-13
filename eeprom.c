@@ -126,12 +126,14 @@ int8 EE_Eeprom_write(int8 eeprom_addr,int16 byte_addr, int16 byte_count,int8 *da
 
 void EE_Eeprom_fill(int8 cur_i2C_addr, int8 set_char)
 {
-	int8 buf;
-	int16 x,pc_complete;
+	int8 buf[EEPROM_PAGE_SIZE+1];
+	int8 inbuf[EEPROM_PAGE_SIZE+1];
+	int16 x,n,pc_complete;
 	
-	buf = set_char;
+	for(n = 0; n < EEPROM_PAGE_SIZE; n++)
+		buf[n] = set_char;
 	
-	for(x = 0; x < EEPROM_BYTE_COUNT; x++)
+	for(x = 0; x < EEPROM_BYTE_COUNT; x += EEPROM_PAGE_SIZE)
 	{
 		pc_complete = ((x * 100)/EEPROM_BYTE_COUNT);
 		while(!ASC_Asci_tx_empty());
@@ -139,20 +141,21 @@ void EE_Eeprom_fill(int8 cur_i2C_addr, int8 set_char)
 		ASC_Asci_msg(tmpstr);
 		
 		// Write char to EEPROM
-		EE_Eeprom_write(cur_i2C_addr,x,1,&buf);
+		EE_Eeprom_write(cur_i2C_addr,x,EEPROM_PAGE_SIZE,buf);
 		
 		// Now check data has been set
-		EE_Eeprom_read(cur_i2C_addr,x,1,&buf);	//read 1 byte of data from EEPROM
+		EE_Eeprom_read(cur_i2C_addr,x,EEPROM_PAGE_SIZE,inbuf);	//read 16 byte of data from EEPROM
 
-		if(buf != set_char)
+		for(n = 0; n < EEPROM_PAGE_SIZE; n++)
 		{
-			while(!ASC_Asci_tx_empty());
-			sprintf((char *)tmpstr,"\n\rErase ERR %x\n\r",(int16)buf);
-			ASC_Asci_msg(tmpstr);
-			break;
+			if(inbuf[n] != set_char)
+			{
+				while(!ASC_Asci_tx_empty());
+				sprintf((char *)tmpstr,"\n\rErase ERR %x\n\r",(int16)inbuf[n]);
+				ASC_Asci_msg(tmpstr);
+				return;
+			}
 		}
-		
-
 	}
 	while(!ASC_Asci_tx_empty());
 }
