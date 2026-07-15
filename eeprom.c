@@ -111,7 +111,7 @@ int8 EE_Eeprom_write(int8 eeprom_addr,int16 byte_addr, int16 byte_count,int8 *da
 		}
 		if( n == EE_WR_TIMEOUT)
 		{
-			ASC_Asci_msg((int8 *)"\n\n\r!!! EEPROM Write Error !!!\n\n\r");
+			MEN_Rom_msg(EEPROM_WRITE_ERROR_MSG);
 			return FALSE;
 		}
 	}
@@ -137,7 +137,7 @@ void EE_Eeprom_fill(int8 cur_i2C_addr, int8 set_char)
 	{
 		pc_complete = ((x * 100)/EEPROM_BYTE_COUNT);
 		while(!ASC_Asci_tx_empty());
-		sprintf((char *)tmpstr,"\rResetting All of EEPROM to %02x - %03d%% done",(int16)buf,pc_complete+1);
+		sprintf((char *)tmpstr,"\rResetting All of EEPROM to %02x - %03d%% done",(int16)set_char,pc_complete+1);
 		ASC_Asci_msg(tmpstr);
 		
 		// Write char to EEPROM

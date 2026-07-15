@@ -1549,6 +1549,7 @@ static void Port_expander_test_menu(void)
 		{
 			MEN_Rom_msg(ASSY_NOT_DETECTED_MSG);
 			MEN_Set_cmd_bk_func(PORT_EXPANDER_TEST_MENU_MSG,Port_expander_test_menu);
+			MAI_Set_power(OFF);
 			return;			
 		}
 		else // bd is detected
@@ -1566,7 +1567,8 @@ static void Port_expander_test_menu(void)
 
 				}
 			}
-			MEN_Rom_msg(BD_TEST_SUCCESS_MSG);
+			else
+				MEN_Rom_msg(BD_TEST_SUCCESS_MSG);
 		}
 		MEN_Set_cmd_bk_func(SELECT_BD_MSG,Select_bd_menu);
 		MAI_Set_power(OFF);
@@ -1587,12 +1589,16 @@ static int8 Port_expander_test(void)
 	int8 pass_flag = TRUE;
 	char *pf_msg;
 	
-	MEN_Rom_msg(PORT_EXPANDER_TEST_MSG);	// display PCB assy PN message
 	if(!I2C_ping_addr(PORT_EXPAND_I2C_ADDR))
+	{
 		pass_flag = FALSE;
+		MEN_Rom_msg(ADAPTER_BD_NOT_DETECTED_MSG);
+		return FALSE;
+	}
 	else
-		{
+	{
 		
+		MEN_Rom_msg(PORT_EXPANDER_TEST_MSG);	// display PCB assy PN message
 		cur_i2C_addr = PORT_EXPAND_I2C_ADDR;
 		I2C_Write(cur_i2C_addr,1,&cur_pe_cmd);
 		TIM_Wait(200);
@@ -2124,12 +2130,33 @@ static void Prog_final_assy_details(void)
 	ASC_Asci_msg(tmpstr);
 
 	// Store Prod Number
-	if(!EE_Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_NUM_LAYOUT_POS,EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE,final_assy_no_str )) // Store PCB assy number, code and rev
+	if(!I2C_ping_addr(cur_i2C_addr))
+	{
+		MEN_Rom_msg(ASSY_NOT_DETECTED_MSG);
+		MAI_Set_power(OFF);
+		MEN_Set_cmd_bk_func(FINAL_ASSY_PROG_FAIL_MSG,Retry_prog_final_assy_menu);
+		return;
+		
+	}
+	else if(!EE_Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_NUM_LAYOUT_POS,EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE,final_assy_no_str )) // Store PCB assy number, code and rev
 	{
 		MAI_Set_power(OFF);
 		MEN_Set_cmd_bk_func(FINAL_ASSY_PROG_FAIL_MSG,Retry_prog_final_assy_menu);
 		return;
 	}
+	else
+	{
+		EE_Eeprom_read(cur_i2C_addr, EEPROM_FINAL_PROD_NUM_LAYOUT_POS,EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE,tmpstr );
+		if(strncmp((char *)final_assy_no_str,(char *)tmpstr,EEPROM_FINAL_PROD_NUM_LAYOUT_SIZE))
+		{
+			MEN_Rom_msg(EEPROM_WRITE_ERROR_MSG);
+			MAI_Set_power(OFF);
+			MEN_Set_cmd_bk_func(FINAL_ASSY_PROG_FAIL_MSG,Retry_prog_final_assy_menu);
+			return;
+		}
+	}
+	
+	
 		
 	//	Store Prod code ("00")
 	EE_Eeprom_write(cur_i2C_addr, EEPROM_FINAL_PROD_CODE_LAYOUT_POS,EEPROM_FINAL_PROD_CODE_LAYOUT_SIZE,(int8 *)"00" ); // Store PCB assy number, code and rev
@@ -2354,11 +2381,11 @@ static void Prog_details_menu(void)
 			if(!exit_flag)
 			{
 				// format & store Assy no, code and rev .
-				strncpy(tmpstr,buf,4);
+				strncpy((char *)tmpstr,(char *)buf,4);
 				tmpstr[4] = '-';
-				strncpy(&tmpstr[5],&buf[4],2);
+				strncpy((char *)&tmpstr[5],(char *)&buf[4],2);
 				tmpstr[7] = '-';
-				strncpy(&tmpstr[8],&buf[6],4);
+				strncpy((char *)&tmpstr[8],(char *)&buf[6],4);
 				tmpstr[12] = 0;
 								
 				EE_Eeprom_write(cur_i2C_addr, EEPROM_ASSY_NUM_STRING_LAYOUT_POS,EEPROM_ASSY_NUM_STRING_LAYOUT_SIZE,tmpstr ); // Store PCB assy number, code and rev
@@ -2416,7 +2443,9 @@ static int8 Get_ip_chars(int8* buf,int8 count,int8 max_flag)
 			return FALSE;
 		}
 		if(!Check_alpha_char(rx_byte))
+		{
 			n--;
+		}
 	}
 	buf[n] = 0;
 	return FALSE;

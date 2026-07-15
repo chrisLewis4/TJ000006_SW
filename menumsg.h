@@ -109,12 +109,13 @@ extern int8 const CHECKING_DATA_RETENTION_MSG[];
 extern int8 const DATA_RETENTION_OK_MSG[];
 extern int8 const DATA_RETENTION_BAD_MSG[];
 extern int8 const EEPROM_READ_ERROR_MSG[];
+extern int8 const EEPROM_WRITE_ERROR_MSG[];
 extern int8 const ALPHANUMERIC_CHARS_ONLY_MSG[];
 extern int8 const NUMERIC_CHARS_ONLY_MSG[];
 extern int8 const EEPROM_DEBUG_MSG[];
 extern int8 const DEBUG_MENU_MSG[];
 extern int8 const PORT_EXPANDER_DEBUG_MSG[];
 extern int8 const PORT_EXPANDER_TEST_MSG[];
-
+extern int8 const ADAPTER_BD_NOT_DETECTED_MSG[];
 extern int8 const PROG_DETAILS_MSG[];
 #endif /* MENUMSG_H_ */
