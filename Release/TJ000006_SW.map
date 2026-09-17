@@ -629,8 +629,9 @@ END GROUP
                 0x00001e39        0x3 menumsg.o
                 0x00001e39                NEWLINE_MSG
  .progmem.data.FW_PN
-                0x00001e3c       0x18 version.o
+                0x00001e3c       0x17 version.o
                 0x00001e54                . = ALIGN (0x2)
+ *fill*         0x00001e53        0x1 
  *(.jumptables)
  *(.jumptables*)
  *(.lowtext)

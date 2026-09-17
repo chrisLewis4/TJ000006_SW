@@ -752,7 +752,7 @@ Disassembly of section .text:
 
 00001e3c <FW_PN>:
     1e3c:	54 4a 30 30 30 30 30 36 5f 53 57 20 2d 20 56 65     TJ000006_SW - Ve
-    1e4c:	72 20 42 31 2e 31 34 00                             r B1.14.
+    1e4c:	72 20 56 32 2e 30 00 00                             r V2.0..
 
 00001e54 <__ctors_end>:
     1e54:	11 24       	eor	r1, r1
