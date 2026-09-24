@@ -230,14 +230,9 @@ int8 const SELECT_BD_MSG[] PROGMEM =
 	"Select Board Under Test (BUT)\n\r"
 	"=============================\n\r"
 	"1 - 6519-01 - Net Connector PCB\n\r"
-<<<<<<< Updated upstream
 	"2 - 6769-01/6770-01 - 256/128 Net Adapter PCB\n\r"
 	"X - Exit to Start Menu\n\r"
 	"<ENTER>- To refresh screen\n\n\r"
-=======
-	"2 - 6768-01 - Net Adapter PCB\n\r"
-	"X - Exit to Start Menu\n\n\r"
->>>>>>> Stashed changes
 };
 
 int8 const NET_CONN_SELECTED_MSG[] PROGMEM =
