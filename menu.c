@@ -185,7 +185,7 @@ static int8 const *net_id_list[11] =
 	NET_ID5_MSG,
 	NET_ID6_MSG,
 	NET_ID7_MSG,
-	NET_ID9_MSG,
+	NET_ID8_MSG,
 	NET_ID9_MSG,
 	NET_ID10_MSG,
 };
@@ -1565,6 +1565,11 @@ static void Port_expander_test_menu(void)
 					MEN_Set_cmd_bk_func(SELECT_BD_MSG,Select_bd_menu);
 //					MEN_Set_cmd_bk_func(FSTART_MENU_MSG,Fstart_menu);
 
+				}
+				else
+				{
+					MEN_Set_cmd_bk_func(PORT_EXPANDER_TEST_MENU_MSG,Port_expander_test_menu);
+					return;				
 				}
 			}
 			else

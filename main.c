@@ -144,7 +144,7 @@ int8 MAI_Set_header_cntrl(IPOP_ENUM ipop_stat, HILO_ENUM hilo_stat)
 	if(ipop_stat == IP)
 	{
 		DDRB &= ~HEADER_CONFIG_BIT; // Set for input
-		PORTB &= ~HEADER_CONFIG_BIT; // disable pull-up
+	//	PORTB &= ~HEADER_CONFIG_BIT; // disable pull-up
 	}
 	else
 	{	// config is output
