@@ -953,17 +953,52 @@ static void Start_eeprom_prog(void)
 	}
 	else
 	{
+<<<<<<< Updated upstream
 		fail_flag = TRUE;
 	}
+=======
+		MEN_Rom_msg(DATA_RETENTION_BAD_MSG);
+		fail_flag = TRUE;
+	}
+	
+	if(adapter_flag & !fail_flag)
+	{
+		while(!Port_expander_test())
+		{
+			MEN_Rom_msg(PORT_EXPANDER_TEST_FAILED_MSG);
+			rx_byte  = Wait_for_x_or_enter();
+			if(rx_byte == 'x')
+			{
+				MEN_Rom_msg(NEWPAGE_MSG);
+				MEN_Rom_msg(BD_TEST_FAIL_MSG);
+				user_ip_buf_ix = 0;	//reset user input buf index
+				user_ip_max_chars = BD_SN_STRING_LEN;
+				MEN_Set_cmd_bk_func(ENTER_SN_MSG,Get_serial_no);
+				MAI_Set_power(OFF);
+				return;
+			}
+			MEN_Rom_msg(NEWPAGE_MSG);
+			
+		}
+	}	
+>>>>>>> Stashed changes
 
 	MAI_Set_power(OFF);
 	MAI_Set_header_cntrl(IP,LO);
 
 	MEN_Rom_msg(NEWPAGE_MSG);
+<<<<<<< Updated upstream
 	if(fail_flag)
 		MEN_Rom_msg(DATA_RETENTION_BAD_MSG);
 	else
 		MEN_Rom_msg(BD_TEST_SUCCESS_MSG);
+=======
+	if(!fail_flag)
+		MEN_Rom_msg(BD_TEST_SUCCESS_MSG);
+	else
+		MEN_Rom_msg(BD_TEST_FAIL_MSG);
+		
+>>>>>>> Stashed changes
 
 	// Set Params for SN
 	user_ip_buf_ix = 0;	//reset user input buf index

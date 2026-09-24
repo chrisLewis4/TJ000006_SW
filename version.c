@@ -22,7 +22,11 @@
 /*						LOCAL CONSTANT DEFINITIONS					*/
 /*==================================================================*/
 
+<<<<<<< Updated upstream
 static int8 const FW_PN[] PROGMEM = {"TJ000006_SW - Ver V2.1"};  
+=======
+static int8 const FW_PN[] PROGMEM = {"TJ000006_SW - Ver B1.10"};
+>>>>>>> Stashed changes
 
 /*==================================================================*/
 /*		LOCAL INITIALISED VARIABLES (initialised to 0 by default)	*/
